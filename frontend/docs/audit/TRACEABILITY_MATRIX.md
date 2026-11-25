@@ -71,3 +71,7 @@ This matrix reflects the current implementation. The authoritative requirements 
 - `bun audit` reports two moderate transitive build/development advisories.
 - Real authentication, CSRF enforcement, RBAC, payments, ledger concurrency, AI persistence, and production hosting remain backend work.
 
+## Phase 2 cross-stack matrix
+
+The current cross-stack requirement matrix is maintained at `../../../docs/audit/TRACEABILITY_MATRIX.md`. This file remains the Phase 1.1 frontend evidence record.
+

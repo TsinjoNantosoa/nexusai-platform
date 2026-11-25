@@ -1,0 +1,44 @@
+# NexusAI
+
+NexusAI is a French/English AI-character chat demonstration. The repository contains a portable React/Vite SPA and a Phase 2 FastAPI modular monolith foundation for real identity, sessions, PostgreSQL persistence, server-authoritative products, and a transactional gem wallet.
+
+## Current status
+
+- Phase 1.1 frontend stabilization is merged in the local `origin/main` baseline.
+- Phase 2 implements registration, login, logout, current-user sessions, CSRF bootstrap, roles, wallet ledger primitives, products, migrations, health checks, and local Docker infrastructure.
+- Stripe Checkout, Customer Portal, signed webhooks, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
+
+## Local startup
+
+Requirements: Python 3.12, Docker Compose, Bun, and an available Docker daemon.
+
+```powershell
+docker compose up -d --build
+cd frontend
+bun install --frozen-lockfile
+$env:VITE_DATA_MODE = "api"
+bun run dev
+```
+
+The frontend runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`. Compose uses PostgreSQL on `127.0.0.1:55432` and a project-specific volume/network. It does not touch another PostgreSQL service.
+
+The backend container runs `alembic upgrade head` and the idempotent product seed at startup. The explicit procedure is:
+
+```powershell
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m app.db.seed
+```
+
+Provisioning an administrator is explicit and requires an existing fictional local account:
+
+```powershell
+docker compose exec backend python -m app.auth.provision_admin --email admin@example.test
+```
+
+## Validation
+
+Backend local environment and tests are documented in `docs/audit/PHASE_2_TEST_REPORT.md`. The PostgreSQL integration suite requires an isolated `nexusai_test` database and never uses SQLite as evidence for locking behavior. Frontend validation remains Bun-first.
+
+## Boundaries
+
+Use `VITE_DATA_MODE=mock` for the independent in-memory demonstration. Use `VITE_DATA_MODE=api` only with the FastAPI service. No production credentials or real payment credentials belong in this repository.
