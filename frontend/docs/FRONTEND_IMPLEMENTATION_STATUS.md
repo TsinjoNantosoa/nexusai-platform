@@ -2,6 +2,10 @@
 
 Date: 2026-11-25
 
+## Phase 1.1 status
+
+Responsive stabilization is implemented on the same feature branch. The public mobile header now has an accessible menu; mobile grids, hero typography, auth forms, chat, wallet/billing layouts, safe-area navigation, and browser autofill styling were hardened. The responsive Chromium matrix covers 10 viewport widths and all 13 routes with no measured horizontal overflow. Evidence is in `docs/audit/PHASE_1_1_RESPONSIVE_TEST_REPORT.md`.
+
 ## Phase 1 status
 
 The frontend is now a standalone React/Vite SPA on `feat/frontend-stabilization`. The existing route URLs, translations, financial mock rules, and browser journeys are preserved. The authoritative product requirements remain in `docs/CAHIER_DES_CHARGES.md`, which was not modified.
