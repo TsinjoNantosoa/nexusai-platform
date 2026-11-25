@@ -14,7 +14,8 @@
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "typecheck": "bunx --bun tsgo -b --noEmit",
     "test:e2e": "python3 tests/e2e/nexus_journeys.py",
-    "test:e2e:responsive": "python tests/e2e/responsive_journey.py"
+    "test:e2e:responsive": "python tests/e2e/responsive_journey.py",
+    "test:e2e:backend": "python tests/e2e/backend_journey.py"
   },
   "overrides": {
     "rolldown": "1.2.1",
