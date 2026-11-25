@@ -1,36 +1,41 @@
 # Passation backend NexusAI
 
-## Exécution locale
-
-Node.js récent et npm sont nécessaires. Depuis la racine :
+## Exécution frontend
 
 ```sh
-npm install
-npm run dev
-npm run test
-npm run lint
-npm run typecheck
-npm run build
+bun install --frozen-lockfile
+bun run dev
+bun run test
+bun run lint
+bun run typecheck
+bun run build
 ```
 
-Le lockfile installé est `bun.lock` (reproduction exacte : `bun install --frozen-lockfile`). Le projet n’exige pas un compte Bolt pour ses services mock. Le pipeline Vite utilise la configuration TanStack de ce projet Lovable, pas le bootstrap React Router de l’archive. Cette adaptation a été approuvée.
+Le frontend est une SPA Vite autonome. Le proxy de développement `/api` cible `http://127.0.0.1:8000`, configurable par `API_PROXY_TARGET`. Pour FastAPI, exposer un reverse proxy même origine et définir `VITE_DATA_MODE=api`; ne jamais mettre de secret dans `VITE_*`.
 
-`.env.example` ne contient que les deux valeurs publiques. Mock par défaut. Pour FastAPI, définir VITE_DATA_MODE=api et VITE_API_BASE_URL ; utiliser un reverse proxy même origine. Aligner les schémas JSON/pagination du client HTTP avec l’OpenAPI final. Ne jamais placer Stripe/OpenAI ou des secrets serveur dans VITE_*.
+## Sessions et CSRF
 
-## Sessions, CSRF et paiement
+FastAPI doit fournir session opaque HttpOnly/Secure, rotation, révocation, SameSite approprié et RBAC. Le client utilise `credentials: include` et n’enregistre aucune session dans le stockage navigateur.
 
-FastAPI réalise les sessions HttpOnly/Secure, rotation, révocation, CSRF et RBAC. Le frontend utilise credentials include. Contracter l’acquisition du jeton CSRF, puis appeler setCsrfToken en mémoire. Auth côté client n’est qu’une garde UX. Aucun backend ou fournisseur alternatif n’a été provisionné.
+Contrat CSRF proposé, à approuver avant Phase 2 :
 
-Backend Checkout : SKU et clé idempotente → URL Stripe et commande. Webhooks, signature, factures, journal financier, refunds et réconciliation restent Python/PostgreSQL. Le retour UI observe seulement la commande. Customer Portal reste backend-owned. Aucune carte n’est collectée et aucun secret n’est demandé.
+1. un endpoint public de bootstrap renvoie un token lié à la session ou un cookie CSRF lisible par le frontend;
+2. le frontend conserve le token uniquement en mémoire et l’envoie dans `X-CSRF-Token` sur chaque mutation, y compris le POST SSE;
+3. login, rotation de session, expiration et logout renouvellent ou effacent le token;
+4. un 403 CSRF est distingué d’un 401 session expirée et ne déclenche jamais un retry financier automatique.
 
-## SSE et opérations manquantes
+Le frontend prépare `setCsrfToken`; l’endpoint, le format, la rotation et les codes d’erreur restent des décisions backend.
 
-Voir API_CONTRACT.md pour l’enveloppe SSE proposée et les contrats encore à approuver. Ajouter endpoints mémoire/reset/block, commandes paginées, export/suppression, administration catalogue et modération. La restitution réelle ne doit jamais être déclenchée arbitrairement par le frontend.
+## Paiement et IA
 
-## PWA et recette externe
+Checkout reçoit uniquement le SKU et une clé `Idempotency-Key`; les prix, crédits et commandes proviennent du serveur. Stripe Checkout, Customer Portal, signatures webhook, factures, refunds, ledger et réconciliation restent Python/PostgreSQL. Le retour UI observe la commande et ne crédite jamais le portefeuille.
 
-Manifest-only en preview, worker généré seulement pour publication, registration refusée en preview/dev/iframe. Vérifier le worker émis par le pipeline déployé, les exclusions du cache, les mises à jour pendant opération active, l’installation Chrome/Edge/Android et iOS, le retour réseau et le mode hors ligne publié. Aucun appareil réel n’a été testé.
+Le POST SSE doit émettre des frames `delta`, `done` et `error`. Le client accepte plusieurs événements par chunk, frames fragmentées, UTF-8 fragmenté et interruption; aucun retry payant automatique n’est effectué.
 
-Les tests Stripe, PostgreSQL/concurrence, CSRF/RBAC, remboursement R08, backup/restore, CI/infrastructure et T01–T18 réels restent à exécuter. Le service mock ne les valide pas. L’application n’a pas été publiée.
+## PWA et recette
 
-Tests navigateur locaux : installer Python Playwright dans votre environnement et Chromium, puis `npm run test:e2e` avec le serveur démarré sur localhost:8080. Les captures sont temporaires sous /tmp/browser/nexus.
+Le worker est généré dans `dist/sw.js` par `bun run build`. Le preview local contrôlé est `/?sw=on`; le développement normal reste sans worker. Vérifier en publication le fallback SPA, l’installation, le cache uniquement public, l’absence de données privées et l’approbation des mises à jour pendant checkout/génération.
+
+## Hors périmètre frontend
+
+OpenAPI final, sessions/CSRF/RBAC serveur, PostgreSQL/concurrence, Stripe Sandbox/webhooks, fournisseur IA, refunds R08, modération production, export/suppression, backup/restore, CI/infrastructure et recettes T01–T18 réelles restent à exécuter.

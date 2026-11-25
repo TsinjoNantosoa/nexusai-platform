@@ -1,0 +1,44 @@
+# Environment files and local credentials
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+
+# JavaScript and Python dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+
+# Build, test, coverage, and tool output
+dist/
+dist-ssr/
+.output/
+coverage/
+playwright-report/
+test-results/
+browser-artifacts/
+*.tsbuildinfo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local databases, logs, and temporary files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+tmp/
+temp/
+
+# Local editor and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

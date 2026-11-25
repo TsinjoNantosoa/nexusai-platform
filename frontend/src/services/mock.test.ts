@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { MockApiClient } from "./mock";
 import { ApiError } from "./types";
 import { registrationSchema, authSchema } from "@/features/Auth";
-import { isPreviewHost } from "@/lib/offline";
+import { isPreviewHost, shouldRegisterOfflineSupport } from "@/lib/offline";
 let api: MockApiClient;
 beforeEach(async () => {
   api = new MockApiClient();
@@ -178,5 +178,21 @@ describe("W02 registration boundaries", () => {
   it("keeps published and custom-domain apps eligible", () => {
     expect(isPreviewHost("nexusai.lovable.app")).toBe(false);
     expect(isPreviewHost("preview-v2--shop.example.com")).toBe(false);
+    expect(
+      shouldRegisterOfflineSupport({
+        production: true,
+        framed: false,
+        hostname: "localhost",
+        switchValue: "on",
+      }),
+    ).toBe(true);
+    expect(
+      shouldRegisterOfflineSupport({
+        production: true,
+        framed: false,
+        hostname: "localhost",
+        switchValue: null,
+      }),
+    ).toBe(false);
   });
 });

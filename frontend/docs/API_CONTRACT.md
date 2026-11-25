@@ -1,6 +1,6 @@
 # Contrat frontend / FastAPI
 
-Préfixe configurable `VITE_API_BASE_URL=/api/v1`. Mode `VITE_DATA_MODE=api` : aucun fallback vers les données fictives.
+Préfixe configurable `VITE_API_BASE_URL=/api/v1`. `VITE_DATA_MODE` accepte uniquement `mock` ou `api`; une valeur inconnue est une erreur de configuration. Mode `api` : aucun fallback vers les données fictives.
 
 Implémentés dans HttpApiClient : POST auth/register, auth/login, auth/logout ; GET users/me, characters, wallet, wallet/transactions, billing/products, billing/subscription, billing/orders/{id} ; POST billing/checkout, billing/portal, conversations, reports ; GET conversations, conversations/{id}, conversations/{id}/messages, admin/reports ; DELETE conversations/{id} ; POST conversations/{id}/messages avec SSE.
 
@@ -10,4 +10,4 @@ Les structures du cahier des charges sont initiales, pas un OpenAPI complet : le
 
 SSE proposé, à approuver : `event: delta`, `data: {"delta":"texte"}` ; `event: done`, `data: {"message": {...Message}}` ; `event: error`, `data: {"code":"...","request_id":"..."}`. Parser fetch streaming avec frames partielles ; état final obligatoire. Aucun retry automatique payant.
 
-Cookies credentials include ; aucune session/token en localStorage. `HttpApiClient.setCsrfToken` prévoit X-CSRF-Token sur mutations ; acquisition et rotation restent à contracter. Le serveur doit vérifier CSRF, propriétaire, rôles et limites. Erreurs structurées : code métier, request_id, HTTP 401/403/404/409/422/429/503. Aucune intégration réelle n’a été testée.
+Cookies credentials include ; aucune session/token en localStorage. `HttpApiClient.setCsrfToken` envoie `X-CSRF-Token` sur mutations ; acquisition, association session, rotation, expiration et logout restent à contracter avec FastAPI. Le serveur doit vérifier CSRF, propriétaire, rôles et limites. Erreurs structurées : code métier, request_id, HTTP 401/403/404/409/422/429/503. Aucune intégration réelle n’a été testée.

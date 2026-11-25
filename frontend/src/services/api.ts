@@ -1,7 +1,8 @@
 import { MockApiClient } from "./mock";
 import { HttpApiClient } from "./http";
+import { dataMode } from "./config";
 import type { ApiClient } from "./types";
-export const isMock = import.meta.env["VITE_DATA_MODE"] !== "api";
+export const isMock = dataMode === "mock";
 let browserMock: MockApiClient | undefined;
 let browserHttp: HttpApiClient | undefined;
 export function getApi(): ApiClient {

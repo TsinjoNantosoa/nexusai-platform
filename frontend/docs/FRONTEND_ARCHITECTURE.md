@@ -1,11 +1,23 @@
 # Architecture frontend NexusAI
 
-React 19, TypeScript strict, Vite et TanStack Start/Router (adaptation approuvée), Tailwind 4 et composants shadcn. Les versions TanStack du projet cible sont conservées. Les treize routes sont des fichiers dans `src/routes`; chaque page possède ses métadonnées. Le shell partagé et la bannière de démonstration entourent l’Outlet racine.
+## Runtime
 
-`src/services/types.ts` définit l’interface ApiClient. `mock.ts` fournit la démonstration en mémoire ; `http.ts` utilise les cookies du futur FastAPI avec credentials include. `api.ts` choisit explicitement le mode et évite de partager les comptes mock entre requêtes SSR. Aucun fallback mock en mode API. TanStack Query gère l’état et l’invalidation.
+NexusAI est une SPA Vite indépendante : React 19, TypeScript strict, TanStack Router file-based, TanStack Query, Tailwind 4 et composants shadcn. `index.html` monte `src/main.tsx`, qui crée un router navigateur et un `QueryClient` par application. Le build ne dépend plus de TanStack Start, Nitro ou d’une configuration Lovable.
 
-Le service mock possède un ledger signé, des références uniques, une commande idempotente et une réservation IA suivie d’une compensation sur échec. Ce n’est pas une preuve d’atomicité PostgreSQL. Les mots de passe de démonstration ne sont pas persistés ni utilisés comme authentification sécurisée ; les comptes fictifs ne constituent pas une architecture de production.
+Le serveur de publication doit fournir un fallback SPA vers `index.html` pour les treize routes. Le proxy Vite local transmet `/api` vers FastAPI mais n’est jamais nécessaire en mode mock.
 
-Français par défaut, anglais via i18next. Couleurs et dimensions dans `src/styles.css`. Portraits originaux générés, optimisés WebP et référencés par des pointeurs d’assets.
+## Routes et données
 
-PWA : manifest et icônes ; vite-plugin-pwa generateSW, registration unique gardée dans `src/lib/offline.ts`. Pas de registration dans preview/dev/iframe. La navigation publique `/` utilise NetworkFirst ; seules ressources statiques publiques permises sont précachées. API privées, contenu des conversations, wallet et pages auth/billing ne sont pas cachés. Le comportement publié reste à vérifier. Aucun cache privé TanStack persistant.
+Les fichiers `src/routes` conservent les URLs existantes. `src/services/types.ts` définit `ApiClient`; `src/services/mock.ts` fournit une démonstration strictement en mémoire; `src/services/http.ts` parle au futur backend via cookies `credentials: include`. `src/services/config.ts` n’autorise que `mock` et `api`, sans fallback automatique.
+
+Les loaders catalogue/offres restent des loaders TanStack Router côté navigateur; ils ne font plus de SSR. Le portefeuille, les produits, l’authentification, l’administration et les paiements en mode API sont donc autoritaires côté FastAPI.
+
+## PWA
+
+`vite-plugin-pwa` utilise `generateSW` et `registerType: "prompt"`. Le worker n’est pas activé en développement. Un preview de production local peut l’activer explicitement avec `?sw=on`; les hosts Lovable, les iframes et `?sw=off` restent refusés.
+
+Le precache contient uniquement les ressources statiques générées, icônes et `offline.html`. Le runtime cache ne couvre que la navigation publique `/`. Les API, sessions, conversations, profils privés, wallet, billing, webhooks et vérifications de paiement ne sont pas cachés. Une mise à jour attend l’approbation utilisateur et l’absence d’opération marquée active.
+
+## Sécurité
+
+Les tokens et sessions ne sont pas persistés dans `localStorage` ou `sessionStorage`. Le token CSRF est prévu en mémoire par `HttpApiClient.setCsrfToken`; son acquisition/rotation doit être finalisée avec FastAPI. Le frontend ne contient aucun secret Stripe/IA et ne simule jamais une mutation financière en mode API.

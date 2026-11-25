@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Globe,
   FlaskConical,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/shared";
@@ -30,6 +32,10 @@ const nav = [
   { path: "/pricing", key: "pricing", icon: CreditCard },
   { path: "/settings", key: "settings", icon: Settings },
 ] as const;
+const publicNav = [
+  { path: "/explore", key: "explore" },
+  { path: "/pricing", key: "pricing" },
+] as const;
 export function Shell({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -39,6 +45,9 @@ export function Shell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const isPublic = ["/", "/login", "/register"].includes(path);
   const active = path.startsWith("/chat")
     ? "conversations"
@@ -57,6 +66,47 @@ export function Shell({ children }: { children: ReactNode }) {
   const language = () => {
     void i18n.changeLanguage(i18n.language === "fr" ? "en" : "fr");
   };
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const menu = mobileMenuRef.current;
+    const trigger = mobileMenuButtonRef.current;
+    const previous = document.activeElement as HTMLElement | null;
+    const focusable = menu
+      ? Array.from(
+          menu.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        )
+      : [];
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMobileMenu();
+        return;
+      }
+      if (event.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKeyDown);
+    focusable[0]?.focus();
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+      if (previous?.isConnected) previous.focus();
+      else trigger?.focus();
+    };
+  }, [mobileMenuOpen]);
   const user = session.data;
   return (
     <>
@@ -74,11 +124,14 @@ export function Shell({ children }: { children: ReactNode }) {
         <>
           <header className="public-header">
             <Brand />
-            <nav>
-              <Link to="/explore">{t("nav.explore")}</Link>
-              <Link to="/pricing">{t("nav.pricing")}</Link>
+            <nav className="public-desktop-nav" aria-label={t("nav.home")}>
+              {publicNav.map((item) => (
+                <Link key={item.key} to={item.path}>
+                  {t(`nav.${item.key}`)}
+                </Link>
+              ))}
             </nav>
-            <div className="public-actions">
+            <div className="public-actions public-desktop-actions">
               <Button
                 variant="ghost"
                 size="icon"
@@ -98,7 +151,71 @@ export function Shell({ children }: { children: ReactNode }) {
                 </Link>
               </Button>
             </div>
+            <Button
+              ref={mobileMenuButtonRef}
+              className="public-menu-trigger"
+              variant="outline"
+              size="icon"
+              aria-label={t(mobileMenuOpen ? "nav.collapse" : "nav.expand")}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="public-mobile-menu"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </Button>
           </header>
+          {mobileMenuOpen && (
+            <div className="mobile-menu-layer">
+              <button
+                type="button"
+                className="mobile-menu-backdrop"
+                aria-label={t("common.close")}
+                onClick={closeMobileMenu}
+              />
+              <nav
+                ref={mobileMenuRef}
+                id="public-mobile-menu"
+                className="mobile-menu"
+                aria-label={t("nav.home")}
+                role="dialog"
+                aria-modal="true"
+              >
+                {publicNav.map((item) => (
+                  <Link
+                    key={item.key}
+                    to={item.path}
+                    className="mobile-menu-link"
+                    onClick={closeMobileMenu}
+                  >
+                    {t(`nav.${item.key}`)}
+                    <ChevronRight size={16} />
+                  </Link>
+                ))}
+                <div className="mobile-menu-actions">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      language();
+                      closeMobileMenu();
+                    }}
+                  >
+                    <Globe />
+                    {t("settings.language")}
+                    <span className="mobile-menu-language">{i18n.language.toUpperCase()}</span>
+                  </Button>
+                  <Button asChild variant="outline" onClick={closeMobileMenu}>
+                    <Link to="/login">{t("auth.login")}</Link>
+                  </Button>
+                  <Button asChild onClick={closeMobileMenu}>
+                    <Link to="/register">
+                      {t("auth.register")}
+                      <ArrowUpRight />
+                    </Link>
+                  </Button>
+                </div>
+              </nav>
+            </div>
+          )}
           {children}
           <footer className="public-footer">
             <span>NexusAI</span>
@@ -174,6 +291,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <header className="workspace-header">
               <div className="header-path">
                 <Button
+                  className="language-toggle"
                   variant="ghost"
                   size="icon"
                   title={t(collapsed ? "nav.expand" : "nav.collapse")}
@@ -208,7 +326,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   title={t("settings.language")}
                   onClick={language}
                 >
-                  {i18n.language.toUpperCase()}
+                  <span className="language-code">{i18n.language.toUpperCase()}</span>
                   <Globe size={13} />
                 </Button>
                 {user && (

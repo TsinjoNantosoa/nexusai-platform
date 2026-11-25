@@ -16,6 +16,23 @@ dist-ssr
 .nitro
 *.local
 
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+
+# Test and local runtime artifacts
+coverage
+playwright-report
+test-results
+browser-artifacts
+*.tsbuildinfo
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
