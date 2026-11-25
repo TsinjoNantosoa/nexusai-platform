@@ -12,9 +12,13 @@ import {
   type Message,
   type Report,
 } from "./types";
+import { SseParser } from "./sse";
 
 export class HttpApiClient implements ApiClient {
-  constructor(private base: string) {}
+  private base: string;
+  constructor(base: string) {
+    this.base = base.replace(/\/+$/, "");
+  }
   private csrf: string | null = null;
   setCsrfToken(token: string | null) {
     this.csrf = token;
@@ -65,8 +69,11 @@ export class HttpApiClient implements ApiClient {
     });
   }
   async logout() {
-    await this.request<void>("/auth/logout", { method: "POST" });
-    this.csrf = null;
+    try {
+      await this.request<void>("/auth/logout", { method: "POST" });
+    } finally {
+      this.csrf = null;
+    }
   }
   products() {
     return this.request<Product[]>("/billing/products");
@@ -175,45 +182,38 @@ export class HttpApiClient implements ApiClient {
     if (!res.body) throw new ApiError("network", 0);
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = "";
     let text = "";
     let final: Message | null = null;
+    const parser = new SseParser();
+    const processEvent = (event: { event?: string; data: string }) => {
+      if (!event.data) return;
+      let payload: { delta?: string; message?: Message; code?: string; request_id?: string };
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        throw new ApiError("stream_invalid", 503);
+      }
+      if (event.event === "error")
+        throw new ApiError(payload.code ?? "ai_failure", 503, payload.request_id);
+      if (payload.delta) {
+        text += payload.delta;
+        onChunk(text);
+      }
+      if (event.event === "done" && payload.message) final = payload.message;
+    };
     try {
       while (true) {
         const { done, value } = await reader.read();
-        buffer += decoder.decode(value, { stream: !done }).replace(/\r\n/g, "\n");
-        let split: number;
-        while ((split = buffer.indexOf("\n\n")) >= 0) {
-          const block = buffer.slice(0, split);
-          buffer = buffer.slice(split + 2);
-          const data = block
-            .split("\n")
-            .filter((l) => l.startsWith("data:"))
-            .map((l) => l.slice(5).trimStart())
-            .join("\n");
-          if (!data) continue;
-          const event = block
-            .split("\n")
-            .find((l) => l.startsWith("event:"))
-            ?.slice(6)
-            .trim();
-          let payload: { delta?: string; message?: Message; code?: string; request_id?: string };
-          try {
-            payload = JSON.parse(data);
-          } catch {
-            throw new ApiError("stream_invalid", 503);
-          }
-          if (event === "error")
-            throw new ApiError(payload.code ?? "ai_failure", 503, payload.request_id);
-          if (payload.delta) {
-            text += payload.delta;
-            onChunk(text);
-          }
-          if (event === "done" && payload.message) final = payload.message;
-        }
+        for (const event of parser.push(decoder.decode(value, { stream: !done }), done))
+          processEvent(event);
         if (done) break;
       }
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (signal.aborted) throw new ApiError("generation_canceled", 499);
+      throw new ApiError("network", 0);
     } finally {
+      await reader.cancel().catch(() => undefined);
       reader.releaseLock();
     }
     if (!final) throw new ApiError("stream_incomplete", 503);

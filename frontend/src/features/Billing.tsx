@@ -343,7 +343,7 @@ function WalletContent() {
     }
   };
   return (
-    <>
+    <div data-operation-active={busy}>
       <PageTitle title={t("wallet.title")} subtitle={t("wallet.subtitle")}>
         <Button asChild disabled={!online}>
           <Link to="/pricing">
@@ -534,7 +534,7 @@ function WalletContent() {
         </section>
       )}
       {error ? <ErrorNotice error={error} /> : null}
-    </>
+    </div>
   );
 }
 export function WalletPage() {
@@ -606,7 +606,10 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
           ? LoaderCircle
           : Clock3;
   return (
-    <section className="billing-result">
+    <section
+      className="billing-result"
+      data-operation-active={phase === "verifying" || phase === "pending"}
+    >
       <Icon
         className={
           phase === "confirmed"
