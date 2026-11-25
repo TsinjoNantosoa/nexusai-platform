@@ -30,7 +30,7 @@ export default defineConfig({
       workbox: {
         skipWaiting: false,
         clientsClaim: false,
-        globPatterns: ["**/*.{js,css,woff2}", "icons/*.png", "offline.html"],
+        globPatterns: ["**/*.{js,css,woff2,webp}", "icons/*.png", "offline.html"],
         runtimeCaching: [
           {
             urlPattern: ({ url, request, sameOrigin }) =>
