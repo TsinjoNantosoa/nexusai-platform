@@ -1,0 +1,21 @@
+{
+  "source": "code-archive",
+  "artifact": "Nexus-main.zip",
+  "scope": "Frontend only; future external FastAPI backend; no backend provisioning or real payments authorized.",
+  "capabilities": [
+    {"capability":"code","source":"React/Vite archive and complete Cahier des charges V1.0","outcome":"adapt frontend after routing approval","status":"pending","next_action":"Obtain approval for TanStack routing; the specification has been read in full and preserved."},
+    {"capability":"schema","source":"no schema detected","outcome":"not applicable to authorized frontend scope","status":"not_detected","next_action":"None; backend remains external."},
+    {"capability":"records","source":"fictional in-memory billing fixtures only","outcome":"retain explicit demonstration fixtures","status":"pending","next_action":"Correct inconsistent seed balances and verify simulated rules."},
+    {"capability":"auth identities","source":"in-memory mock sessions and future HTTP auth client","outcome":"retain demo and prepare external cookie session integration","status":"pending","next_action":"Fix admin demo login and session cache refresh; verify external auth later."},
+    {"capability":"authorization","source":"React Router user/staff guards","outcome":"frontend guards only; real authorization stays in FastAPI","status":"pending","next_action":"Adapt guards after routing approval."},
+    {"capability":"uploaded file bytes","source":"no media or user-upload exports detected","outcome":"not detected","status":"not_detected","next_action":"Create licensed or original character assets during FE-02."},
+    {"capability":"external providers","source":"future FastAPI HTTP client; no connected Stripe or AI provider; unused Supabase dependency","outcome":"preserve external API architecture; no Cloud or provider setup","status":"pending","next_action":"Implement missing contracts without real credentials or payments."},
+    {"capability":"public endpoints","source":"frontend page paths only","outcome":"preserve all 13 page URL patterns","status":"pending","next_action":"Create matching TanStack routes if approved."},
+    {"capability":"callbacks","source":"billing success and cancel pages","outcome":"preserve return URLs and authenticated bounded polling","status":"pending","next_action":"Separate explicit mock confirmation from return-page observation."},
+    {"capability":"webhooks","source":"no webhook implementation","outcome":"external backend responsibility","status":"not_detected","next_action":"Never call webhook endpoints from the browser."},
+    {"capability":"schedules","source":"no schedules detected","outcome":"not detected","status":"not_detected","next_action":"None."},
+    {"capability":"secrets","source":"VITE_DATA_MODE and VITE_API_BASE_URL only","outcome":"public configuration only","status":"not_detected","next_action":"Do not request Stripe or AI secret keys."},
+    {"capability":"cutover","source":"no published deployment supplied","outcome":"no deployment authorized","status":"blocked","next_action":"Wait for explicit publishing authorization."},
+    {"capability":"verification","source":"existing tests inspected, not executed; specification acceptance criteria mapped","outcome":"verify each adapted milestone","status":"blocked","next_action":"Wait for architectural approval before implementing or running imported code. Production acceptance tests require the external backend and appropriate test environments."}
+  ]
+}

@@ -1,0 +1,37 @@
+import asyncio,json
+from pathlib import Path
+from playwright.async_api import async_playwright
+OUT=Path('/tmp/browser/nexus')
+async def main():
+ async with async_playwright() as p:
+  browser=await p.chromium.launch(headless=True)
+  context=await browser.new_context(viewport={'width':1440,'height':1000})
+  page=await context.new_page(); errors=[]
+  page.on('pageerror',lambda e:errors.append(str(e)))
+  await page.goto('http://localhost:8080/',wait_until='networkidle')
+  await page.screenshot(path=str(OUT/'landing.png'))
+  print('landing',await page.title())
+  await page.get_by_role('link',name='Se connecter',exact=True).first.click()
+  await page.get_by_role('button',name='Compte de démonstration',exact=True).click()
+  await page.get_by_test_id('wallet-balance').wait_for()
+  print('initial balance',await page.get_by_test_id('wallet-balance').inner_text())
+  await page.get_by_role('link',name='Offres & abonnement',exact=True).first.click()
+  await page.get_by_role('article').filter(has=page.get_by_role('heading',name='Starter',exact=True)).get_by_role('button',name='Choisir ce pack').click()
+  await page.get_by_role('button',name='Lancer la simulation').click()
+  await page.get_by_role('heading',name='Commande confirmée',exact=True).wait_for()
+  await page.screenshot(path=str(OUT/'payment-confirmed.png'))
+  print('confirmed URL',page.url)
+  await page.get_by_role('link',name='Retour au portefeuille').click()
+  print('post purchase',await page.get_by_test_id('wallet-balance').inner_text())
+  await page.get_by_role('button',name='Rejouer la confirmation simulée').click()
+  await page.wait_for_timeout(500)
+  print('duplicate balance',await page.get_by_test_id('wallet-balance').inner_text())
+  await page.get_by_role('link',name='Explorer',exact=True).first.click()
+  await page.screenshot(path=str(OUT/'explore-desktop.png'))
+  print('characters',await page.locator('.character-card').count())
+  await page.set_viewport_size({'width':360,'height':800})
+  await page.screenshot(path=str(OUT/'explore-mobile.png'))
+  print('mobile overflow',await page.evaluate('document.documentElement.scrollWidth > innerWidth'))
+  print('errors',json.dumps(errors))
+  await browser.close()
+asyncio.run(main())
