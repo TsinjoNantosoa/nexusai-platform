@@ -27,6 +27,8 @@ browser-artifacts/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.egg-info/
+.coverage
 
 # Local databases, logs, and temporary files
 *.db
