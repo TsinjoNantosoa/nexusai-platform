@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import Settings
 from app.db.models import Product, StripeCatalogueMapping
 
-from .stripe_client import StripeClient, StripeGateway
+from .stripe_client import StripeClient, StripeGateway, normalize_stripe_value
 
 CATALOGUE_VERSION = "nexusai-2026-11-18-v1"
 CATALOGUE_NAMESPACE = "nexusai"
@@ -386,7 +386,7 @@ def _validate_price(
 ) -> None:
     amount = _resource_value(resource, "unit_amount")
     currency = str(_resource_value(resource, "currency") or "").lower()
-    recurring = _resource_value(resource, "recurring")
+    recurring = normalize_stripe_value(_resource_value(resource, "recurring"))
     if amount != specification.price_cents or currency != specification.currency:
         raise CatalogueBootstrapError(
             f"Stripe price for SKU {sku} conflicts with the approved amount or currency."
@@ -421,11 +421,14 @@ def _resource_id(resource: Mapping[str, Any], kind: str) -> str:
 def _resource_value(resource: Mapping[str, Any], key: str) -> Any:
     if isinstance(resource, Mapping):
         return resource.get(key)
+    normalized = normalize_stripe_value(resource)
+    if isinstance(normalized, Mapping):
+        return normalized.get(key)
     return getattr(resource, key, None)
 
 
 def _metadata(resource: Mapping[str, Any], key: str) -> str | None:
-    metadata = _resource_value(resource, "metadata")
+    metadata = normalize_stripe_value(_resource_value(resource, "metadata"))
     if not isinstance(metadata, Mapping):
         return None
     value = metadata.get(key)
