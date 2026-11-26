@@ -47,4 +47,4 @@ python -m app.billing.bootstrap --apply
 
 `--dry-run` and `--verify` do not create or persist catalogue resources. `--apply` is explicit and must be run by the owner; Codex does not run it with owner credentials. Repeating `--apply` should report reused products/prices and create no duplicates.
 
-Checkout, webhooks, subscriptions, refunds, and wallet crediting remain outside this phase. Catalogue synchronization itself never changes wallet balances.
+Checkout uses only the account-scoped mappings created here; it never falls back to the legacy latest-price fields. Checkout, webhooks, subscriptions, refunds, and wallet crediting are separate concerns. Catalogue synchronization and Checkout creation never change wallet balances.

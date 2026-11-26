@@ -6,7 +6,7 @@ NexusAI is a French/English AI-character chat demonstration. The repository cont
 
 - Phase 1.1 frontend stabilization is merged in the local `origin/main` baseline.
 - Phase 2 implements registration, login, logout, current-user sessions, CSRF bootstrap, roles, wallet ledger primitives, products, migrations, health checks, and local Docker infrastructure.
-- Stripe catalogue preparation is implemented in Phase 3.1. Checkout, Customer Portal, signed webhooks, payment settlement, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
+- Stripe catalogue preparation and Sandbox-only hosted Checkout are implemented through Phase 3.2. Webhooks, wallet fulfillment, Customer Portal, subscriptions, refunds, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
 
 ## Local startup
 

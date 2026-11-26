@@ -1,6 +1,6 @@
 # Stripe Sandbox setup
 
-This procedure is for the temporary Stripe Sandbox only. Phase 3.1 provides an explicit product/price catalogue bootstrap; it does not create Checkout Sessions, subscriptions, refunds, or webhook business logic.
+This procedure is for the temporary Stripe Sandbox only. Phase 3.1 provides the product/price catalogue and Phase 3.2 adds hosted one-time Checkout for Starter/Plus. It does not fulfill orders, process webhooks, create subscriptions, or process refunds.
 
 ## Safety rules
 

@@ -1,4 +1,4 @@
-# NexusAI requirement traceability matrix — Phase 2
+# NexusAI requirement traceability matrix — Phase 3.2
 
 The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, which is unchanged.
 
@@ -6,7 +6,7 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 | --- | --- | --- | --- |
 | F01 registration/login/logout | IMPLEMENTED | FastAPI auth routes, Argon2id, session tests | Email verification and password reset are deferred. |
 | F02 profile/session | IMPLEMENTED | `/users/me`, expiry/revocation, HttpOnly cookie tests | Production TLS topology remains to validate. |
-| F03 catalogue | IMPLEMENTED | PostgreSQL products, idempotent seed, `/billing/products`, Phase 3.1 Stripe catalogue bootstrap and account-scoped mappings | Checkout and payment settlement remain deferred. |
+| F03 catalogue | IMPLEMENTED | PostgreSQL products, idempotent seed, `/billing/products`, Phase 3.1 Stripe catalogue bootstrap and account-scoped mappings | Subscription catalogue remains display-only. |
 | F06 wallet/ledger | IMPLEMENTED | Atomic wallet service, immutable entries, row locks, concurrency tests | Paid credit workflows are deferred to Phase 3. |
 | F12 admin access | PARTIAL | Server-side role dependency and denied regular-user test | Moderation persistence/workflows are deferred. |
 | S01 password/session security | IMPLEMENTED | Argon2id, token hashes, expiry, revocation, rotation, secure production validation | Email/password recovery is deferred. |
@@ -14,7 +14,7 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 | S06 abuse protection | PARTIAL | Deterministic process-local auth sliding window, 429, recovery, forwarded-header bypass test | Shared rate limiting is required for multiple instances. |
 | DB migrations | IMPLEMENTED | Alembic upgrade, downgrade, upgrade against PostgreSQL | No automatic schema creation in the application. |
 | Local infrastructure | IMPLEMENTED | Project-specific Compose network, volume, healthchecks, non-root backend, restart persistence validation | Production orchestration is out of scope. |
-| Stripe/AI | PARTIAL | Sandbox-only catalogue client, explicit bootstrap, validated product/price mappings | Checkout, webhooks, subscriptions, refunds, and AI remain deferred. |
+| Stripe Checkout | IMPLEMENTED / PARTIAL | Server-authoritative hosted Checkout, durable orders/customers, idempotency, ownership/status tests | Webhooks, wallet fulfillment, subscriptions, refunds, live payments, and owner E2E remain deferred. |
 | Frontend API mode | IMPLEMENTED | CSRF bootstrap/rotation in `HttpApiClient`, real browser journey | Mock mode remains independent. |
 
 ## Evidence
@@ -70,4 +70,17 @@ Total: **29/29 PASS** for the local Phase 2.1 acceptance scope. Limitations abov
 | DBSAFE-05 | Incident review and backup/recovery policy are recorded | PARTIAL | No pre-incident backup or restore execution was available; owner approval is required for recovery |
 | DBSAFE-06 | Backend regression passes with the isolated PostgreSQL target and development database identity remains unchanged by test operations | PASS | Frontend regression evidence remains from Phase 2.1 |
 
-Phase 3 remains outside this implementation. The owner must review and accept the incident record and final quality gate before any payment or AI work begins.
+## Phase 3.2 acceptance evidence
+
+| ID | Evidence | Result | Boundary |
+| --- | --- | --- | --- |
+| STR32-01 | Migration `0003_checkout_orders`, model constraints, isolated upgrade | PASS | No downgrade or production migration executed |
+| STR32-02 | Extended single normalized Stripe gateway and fake-gateway tests | PASS | No owner Sandbox call by Codex |
+| STR32-03 | Server product/mapping resolution and immutable order snapshot tests | PASS | Catalogue must be bootstrapped by owner |
+| STR32-04 | CSRF/auth/rate limit/hosted URL/session validation implementation | PASS | Process-local limiter |
+| STR32-05 | Durable idempotency and recovery states; duplicate/conflict tests | PASS | Ambiguous remote outcomes require operator recovery |
+| STR32-06 | Owned order status endpoint, payment/fulfillment separation, line-item verification | PASS | No fulfillment/webhook business processing |
+| STR32-07 | API-mode frontend navigation, bounded polling, offline blocking, bilingual strings | PASS | Responsive browser checks remain a final gate |
+| STR32-08 | Service worker remains public-shell-only; no payment mutation queue | PASS | Published PWA inspection remains owner validation |
+
+Phase 3.3 must not begin until the owner completes final validation and explicitly authorizes it.
