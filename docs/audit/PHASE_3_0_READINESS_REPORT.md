@@ -70,6 +70,7 @@ Validation completed without using a Stripe secret:
 - Backend: Ruff passed; `42` tests passed against the isolated PostgreSQL test service; `pip-audit --local` reported no known vulnerabilities and skipped only the local package name.
 - Stripe configuration: `14` security/configuration unit tests passed, including disabled-by-default, missing-secret, live-key rejection, Sandbox-prefix acceptance, masking, URL/API-version validation, and production rejection cases.
 - Frontend: frozen Bun install passed; lint passed with 10 existing Fast Refresh warnings; typecheck passed; `37` tests passed; production build passed with 48 PWA precache entries.
+- Frontend dependency audit: `bun audit` reports the two existing moderate transitive advisories in `glob` and `minimatch`; no incompatible major upgrade was applied in Phase 3.0.
 - Compose: configuration validation passed; only `postgres-test` was started under the new Phase 3 namespace on port `56433`. No Phase 3 development database was started and no Phase 2 resource was reused.
 - The product seed test initially exposed a dev-target fallback and was corrected to inject the isolated test settings. The rerun passed.
 
