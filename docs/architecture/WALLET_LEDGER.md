@@ -7,3 +7,11 @@ Internal movement services lock the wallet row with PostgreSQL `SELECT ... FOR U
 Refunds are compensating credits. They reference an original negative movement and sum prior restitution entries so the total refund cannot exceed the original debit. Financial history is append-only at the application level.
 
 The current API exposes the wallet and bounded offset pages of transaction history. Product credits from paid orders are not active until Phase 3 payment verification exists.
+
+The invariant is checked against PostgreSQL after welcome credit, internal credit, debit, partial and full refunds, idempotent replay, rejected operations, rollback, and concurrent operations:
+
+```text
+wallet.balance == SUM(wallet_entries.amount)
+```
+
+References are globally unique. Reusing a reference with different amount, operation type, original debit, or wallet owner is rejected as an idempotency conflict. Public clients cannot call the internal credit service.

@@ -37,7 +37,9 @@ docker compose exec backend python -m app.auth.provision_admin --email admin@exa
 
 ## Validation
 
-Backend local environment and tests are documented in `docs/audit/PHASE_2_TEST_REPORT.md`. The PostgreSQL integration suite requires an isolated `nexusai_test` database and never uses SQLite as evidence for locking behavior. Frontend validation remains Bun-first.
+Backend local environment and tests are documented in `docs/audit/PHASE_2_1_TEST_REPORT.md`. The PostgreSQL integration suite requires an isolated `nexusai_test` database and never uses SQLite as evidence for locking behavior. Frontend validation remains Bun-first.
+
+For a production-shaped configuration, set `NEXUSAI_ENVIRONMENT=production`, `NEXUSAI_COOKIE_SECURE=true`, explicit HTTPS `NEXUSAI_ALLOWED_ORIGINS`, and explicit `NEXUSAI_TRUSTED_HOSTS`. Startup rejects unsafe production values; this does not claim TLS, CSP, distributed rate limiting, or production deployment readiness.
 
 ## Boundaries
 

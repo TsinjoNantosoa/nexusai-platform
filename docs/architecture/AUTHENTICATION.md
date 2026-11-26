@@ -6,4 +6,15 @@ Login and registration require a CSRF token obtained from `GET /api/v1/auth/csrf
 
 The database stores SHA-256 hashes of session and CSRF tokens, session expiry, revocation time, and last-seen time. Logout revokes the session and clears both cookies. Passwords use Argon2id. Authentication failures are generic and authentication attempts are rate-limited per process.
 
-Allowed origins and trusted hosts are explicit. The development cookie configuration is `Secure=false`, `SameSite=Lax`; HTTPS deployments must set `Secure=true` and review SameSite behavior for their topology.
+Allowed origins and trusted hosts are explicit. The development cookie configuration is `Secure=false`, `SameSite=Lax`; HTTPS deployments must set `Secure=true` and use explicit HTTPS origins. Production startup rejects wildcard origins, HTTP origins, wildcard trusted hosts, non-positive session or limiter settings, and unsupported SameSite values. `SameSite=None` also requires Secure cookies.
+
+Required production variables are:
+
+```text
+NEXUSAI_ENVIRONMENT=production
+NEXUSAI_COOKIE_SECURE=true
+NEXUSAI_ALLOWED_ORIGINS=https://app.example.test
+NEXUSAI_TRUSTED_HOSTS=app.example.test,api.example.test
+```
+
+The application does not enable arbitrary forwarded-header trust; reverse-proxy TLS and host forwarding must be explicitly configured and constrained by the deployment architecture. Rate limiting remains process-local.

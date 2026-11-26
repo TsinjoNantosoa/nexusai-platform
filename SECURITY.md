@@ -13,9 +13,11 @@ Do not open a public issue containing a vulnerability, credential, private user 
 - State-changing requests require CSRF validation and allowed-origin checks.
 - Authentication has a process-local sliding-window limiter. A shared limiter is required before multi-instance deployment.
 - Financial movements use integer gem amounts, PostgreSQL row locks, unique operation references, and a non-negative balance constraint.
+- Production configuration rejects insecure cookies, wildcard or HTTP origins, wildcard trusted hosts, invalid SameSite values, and non-positive session/rate-limit settings.
+- Backend dependency auditing is reproducible with the pinned development-only `pip-audit==2.10.1`; the validated backend environment reports no known vulnerabilities.
 
 ## Known limitations
 
-This phase does not provide production TLS/CSP configuration, email verification, password reset, external rate-limit storage, Stripe signature verification, AI-provider controls, backup/restore, or a GDPR/PCI certification claim. The frontend retains two documented moderate transitive development/build advisories and recovered artwork licensing remains unverified.
+This phase does not provide production TLS/CSP configuration, email verification, password reset, external rate-limit storage, Stripe signature verification, AI-provider controls, backup/restore, or a GDPR/PCI certification claim. The frontend retains two documented moderate transitive build/development advisories and recovered artwork licensing remains unverified.
 
 Never use real credentials or real customer data in the local Compose database.
