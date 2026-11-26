@@ -1,13 +1,26 @@
+import os
+import sys
 from logging.config import fileConfig
 
 from alembic import context
-from app.core.config import get_settings
 from app.db.models import Base
+from app.db.safety import (
+    DatabaseSafetyError,
+    assert_safe_disposable_test_database,
+    is_destructive_alembic_command,
+)
 from sqlalchemy import engine_from_config, pool
 
 config = context.config
-settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
+x_arguments = context.get_x_argument(as_dictionary=True)
+database_url = (
+    x_arguments.get("database_url")
+    or os.getenv("NEXUSAI_DATABASE_URL")
+    or config.get_main_option("sqlalchemy.url")
+)
+if not database_url:
+    raise RuntimeError("Alembic requires an explicit database URL.")
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -16,8 +29,13 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
+    if is_destructive_alembic_command(sys.argv[1:]):
+        raise DatabaseSafetyError(
+            "Offline destructive Alembic commands are not permitted because "
+            "the effective target cannot be verified."
+        )
     context.configure(
-        url=settings.database_url,
+        url=database_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -32,6 +50,8 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    if is_destructive_alembic_command(sys.argv[1:]):
+        assert_safe_disposable_test_database(database_url, connectable)
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
         with context.begin_transaction():
