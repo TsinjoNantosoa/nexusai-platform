@@ -93,8 +93,8 @@ The authoritative `frontend/docs/CAHIER_DES_CHARGES.md` remains unchanged.
 ## 8. Local Git status at handoff
 
 - Branch: `feat/stripe-integration`
-- HEAD: `f7f5a82`
+- HEAD: latest local handoff commit
 - Working tree: clean
-- Relation to `origin/main`: ahead by 2 local commits
-- Local commits: `0ac1149 feat(stripe): prepare sandbox configuration`; `f7f5a82 docs: clean Phase 3 readiness formatting`
+- Relation to `origin/main`: ahead by local Phase 3 commits
+- Local commits: inspect with `git log --oneline origin/main..HEAD`; no uncommitted changes
 - Remote operations: none; no push, merge, pull request, deployment, or publication
