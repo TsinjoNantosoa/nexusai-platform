@@ -1,0 +1,73 @@
+name: nexusai-phase2
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_DB: nexusai
+      POSTGRES_USER: nexusai
+      POSTGRES_PASSWORD: nexusai
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - nexusai_phase2_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusai -d nexusai"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - nexusai_phase2
+
+  postgres-test:
+    profiles: ["test"]
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_DB: nexusai_test
+      POSTGRES_USER: nexusai_test
+      POSTGRES_PASSWORD: nexusai_test
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - nexusai_phase2_test_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusai_test -d nexusai_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - nexusai_phase2_test
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      NEXUSAI_DATABASE_URL: postgresql+psycopg://nexusai:nexusai@postgres:5432/nexusai
+      NEXUSAI_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      NEXUSAI_TRUSTED_HOSTS: localhost,127.0.0.1,backend
+      NEXUSAI_COOKIE_SECURE: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: ["sh", "-c", "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - nexusai_phase2
+
+networks:
+  nexusai_phase2:
+    name: nexusai_phase2
+  nexusai_phase2_test:
+    name: nexusai_phase2_test
+
+volumes:
+  nexusai_phase2_postgres:
+    name: nexusai_phase2_postgres
+  nexusai_phase2_test_postgres:
+    name: nexusai_phase2_test_postgres

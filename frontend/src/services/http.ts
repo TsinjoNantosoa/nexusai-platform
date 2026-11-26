@@ -23,9 +23,29 @@ export class HttpApiClient implements ApiClient {
   setCsrfToken(token: string | null) {
     this.csrf = token;
   }
+  private async ensureCsrf() {
+    if (this.csrf) return;
+    let response: Response;
+    try {
+      response = await fetch(`${this.base}/auth/csrf`, { credentials: "include" });
+    } catch {
+      throw new ApiError("network", 0);
+    }
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new ApiError(
+        body?.code ?? `http_${response.status}`,
+        response.status,
+        body?.request_id,
+      );
+    }
+    this.csrf = response.headers.get("X-CSRF-Token") ?? body?.csrf_token ?? null;
+    if (!this.csrf) throw new ApiError("csrf_unavailable", 503);
+  }
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers);
     headers.set("Content-Type", "application/json");
+    if (init.method && init.method !== "GET") await this.ensureCsrf();
     if (this.csrf && init.method && init.method !== "GET") headers.set("X-CSRF-Token", this.csrf);
     let response: Response;
     try {
@@ -34,6 +54,8 @@ export class HttpApiClient implements ApiClient {
       throw new ApiError("network", 0);
     }
     if (response.status === 204) return undefined as T;
+    const rotatedCsrf = response.headers.get("X-CSRF-Token");
+    if (rotatedCsrf) this.csrf = rotatedCsrf;
     const body = await response.json().catch(() => null);
     if (!response.ok)
       throw new ApiError(
@@ -157,6 +179,7 @@ export class HttpApiClient implements ApiClient {
     signal: AbortSignal,
     onChunk: (text: string) => void,
   ): Promise<Message> {
+    await this.ensureCsrf();
     const headers = new Headers({
       "Content-Type": "application/json",
       Accept: "text/event-stream",

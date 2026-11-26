@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import re
@@ -176,15 +177,41 @@ async def run_viewport(browser, width, height):
 
 
 async def main():
+    parser = argparse.ArgumentParser(description="Run NexusAI responsive browser checks.")
+    parser.add_argument(
+        "--viewports",
+        help="Comma-separated viewport widths, for example 280,320,360.",
+    )
+    args = parser.parse_args()
+    viewport_map = {width: (width, height) for width, height in VIEWPORTS}
+    selected_viewports = VIEWPORTS
+    if args.viewports:
+        try:
+            requested_widths = [int(width.strip()) for width in args.viewports.split(",")]
+        except ValueError as error:
+            parser.error(f"viewport widths must be integers: {error}")
+        unknown_widths = [width for width in requested_widths if width not in viewport_map]
+        if unknown_widths:
+            parser.error(f"unsupported viewport widths: {unknown_widths}")
+        selected_viewports = [viewport_map[width] for width in requested_widths]
+
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
         results = []
-        for width, height in VIEWPORTS:
+        for width, height in selected_viewports:
             result = await run_viewport(browser, width, height)
             results.append(result)
             print(json.dumps(result, ensure_ascii=False))
         await browser.close()
-        print(json.dumps({"viewports": len(results), "routes_per_viewport": 13}))
+        print(
+            json.dumps(
+                {
+                    "viewports": len(results),
+                    "routes_per_viewport": 13,
+                    "widths": [result["width"] for result in results],
+                }
+            )
+        )
 
 
 if __name__ == "__main__":
