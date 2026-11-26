@@ -36,4 +36,3 @@ These checks do not establish TLS termination, CSP, reverse-proxy hardening, dis
 ## Frontend residuals
 
 `bun audit` reports `GHSA-3g3m-2fjr-6pw4` for `glob@11.1.0` through `vite-plugin-pwa > workbox-build`, and `GHSA-g3hv-75wg-m249` for `minimatch` paths through ESLint, TypeScript ESLint, and Workbox. The current Workbox dependency requires the affected major range; no compatible targeted fix was applied, and no override was used. These are build/development dependency exposures, not claimed runtime authorization controls. Future remediation should upgrade the Vite-PWA/Workbox architecture together and rerun all frontend/PWA validation.
-

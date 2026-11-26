@@ -1,7 +1,7 @@
 # Phase 2.1 implementation report
 
-Date: 2026-11-26  
-Branch: `feat/backend-foundation`  
+Date: 2026-11-26
+Branch: `feat/backend-foundation`
 Baseline: `4e4b2d4` (`docs: record Phase 2 architecture and quality gates`)
 
 ## Corrections delivered
@@ -16,4 +16,3 @@ Baseline: `4e4b2d4` (`docs: record Phase 2 architecture and quality gates`)
 ## Scope preserved
 
 The authoritative `frontend/docs/CAHIER_DES_CHARGES.md` was not modified. Stripe, AI, production deployment, and public publication remain outside this phase.
-
