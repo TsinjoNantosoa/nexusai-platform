@@ -37,12 +37,13 @@ export NEXUSAI_FRONTEND_BASE_URL=http://127.0.0.1:5173
 export API_PROXY_TARGET=http://127.0.0.1:8100
 ```
 
-For an owner-controlled catalogue run, export the key in the same private session and set `NEXUSAI_STRIPE_ENABLED=true`. The application fails closed if enabled without both configured secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values.
+The standard Compose file ignores `NEXUSAI_STRIPE_ENABLED` and owner credential variables. Stripe remains disabled unless the guarded `tools/start_stripe_demo.ps1 -OwnerApproved` launcher supplies private `NEXUSAI_STRIPE_DEMO_*` variables. The application fails closed if enabled without both configured secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values.
 
 When finished:
 
 ```bash
 unset NEXUSAI_STRIPE_SECRET_KEY NEXUSAI_STRIPE_WEBHOOK_SECRET
+unset NEXUSAI_STRIPE_DEMO_ENABLED NEXUSAI_STRIPE_DEMO_SECRET_KEY NEXUSAI_STRIPE_DEMO_WEBHOOK_SECRET
 unset NEXUSAI_STRIPE_ENABLED NEXUSAI_STRIPE_API_VERSION NEXUSAI_FRONTEND_BASE_URL API_PROXY_TARGET
 ```
 

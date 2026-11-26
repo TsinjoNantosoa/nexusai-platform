@@ -4,6 +4,11 @@ import re
 
 from playwright.async_api import async_playwright
 
+from isolation import assert_isolated_e2e_environment
+
+
+assert_isolated_e2e_environment()
+
 
 BASE_URL = os.environ.get("NEXUSAI_FRONTEND_URL", "http://localhost:8081")
 

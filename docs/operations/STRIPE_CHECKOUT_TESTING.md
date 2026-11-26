@@ -20,7 +20,7 @@ python -m pytest tests -q
 
 ## Owner runtime procedure
 
-Supply private Sandbox variables interactively; never paste values into Codex, Git, logs, or frontend variables.
+Supply private Sandbox variables interactively; never paste values into Codex, Git, logs, or frontend variables. The standard Compose file remains Stripe-disabled unless the guarded owner-approved launcher is used; `NEXUSAI_STRIPE_ENABLED=true` alone is not sufficient.
 
 ```bash
 docker compose --project-name nexusai-phase3-stripe config --quiet

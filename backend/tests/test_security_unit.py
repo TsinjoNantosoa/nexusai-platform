@@ -1,7 +1,30 @@
 import pytest
 from app.core.config import Settings
 from app.core.security import hash_password, hash_token, new_token, tokens_equal, verify_password
+from app.core.test_safety import AutomatedTestSafetyError, validate_automated_test_environment
 from pydantic import ValidationError
+from stripe._http_client import RequestsClient
+
+
+def test_automated_tests_reject_inherited_stripe_credentials() -> None:
+    with pytest.raises(AutomatedTestSafetyError):
+        validate_automated_test_environment(
+            {
+                "NEXUSAI_STRIPE_ENABLED": "false",
+                "NEXUSAI_STRIPE_SECRET_KEY": "sk_test_owner_value",
+            }
+        )
+
+
+def test_automated_tests_require_stripe_disabled() -> None:
+    with pytest.raises(AutomatedTestSafetyError):
+        validate_automated_test_environment({"NEXUSAI_STRIPE_ENABLED": "true"})
+    validate_automated_test_environment({"NEXUSAI_STRIPE_ENABLED": "false"})
+
+
+def test_automated_stripe_client_cannot_reach_network() -> None:
+    with pytest.raises(AssertionError, match="forbidden during automated tests"):
+        RequestsClient().request("GET", "https://api.stripe.com/v1/account", {}, None)
 
 
 def test_argon2_passwords_are_one_way_and_verifiable() -> None:
