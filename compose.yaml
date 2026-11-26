@@ -19,6 +19,25 @@ services:
     networks:
       - nexusai_phase2
 
+  postgres-test:
+    profiles: ["test"]
+    image: postgres:16.6-alpine
+    environment:
+      POSTGRES_DB: nexusai_test
+      POSTGRES_USER: nexusai_test
+      POSTGRES_PASSWORD: nexusai_test
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - nexusai_phase2_test_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusai_test -d nexusai_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - nexusai_phase2_test
+
   backend:
     build:
       context: ./backend
@@ -44,7 +63,11 @@ services:
 networks:
   nexusai_phase2:
     name: nexusai_phase2
+  nexusai_phase2_test:
+    name: nexusai_phase2_test
 
 volumes:
   nexusai_phase2_postgres:
     name: nexusai_phase2_postgres
+  nexusai_phase2_test_postgres:
+    name: nexusai_phase2_test_postgres
