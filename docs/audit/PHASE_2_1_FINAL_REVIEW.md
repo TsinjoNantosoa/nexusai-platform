@@ -28,6 +28,16 @@ During local migration validation, the first downgrade was accidentally directed
 
 ## Owner handoff commands
 
+Manual local startup:
+
+```powershell
+docker compose up -d --build
+Set-Location frontend
+bun install --frozen-lockfile
+$env:VITE_DATA_MODE = "api"
+bun run dev -- --host 127.0.0.1 --port 5173
+```
+
 Review locally before publication:
 
 ```powershell
