@@ -16,6 +16,8 @@ The catalogue version is `nexusai-2026-11-18-v1`. Stripe products and prices rec
 
 `app.billing.stripe_client` constructs the Stripe SDK client only when the explicit command needs it. It applies the configured API version, timeout, and bounded network retries. Imports and FastAPI startup do not contact Stripe. The client rejects disabled configuration and surfaces sanitized error codes without logging credentials.
 
+Stripe SDK 17.1.0 responses are normalized at this boundary: raw `StripeResponse` values are deserialized with `api_mode="V1"`, Stripe resources are converted recursively through `to_dict()`, and pagination yields normalized products/prices. Missing identifiers and malformed responses fail closed. An absent `livemode` field is preserved as absent; only explicit `livemode=true` is rejected.
+
 `app.billing.catalogue` owns discovery, validation, creation planning, and persistence. It lists all pages, rejects ambiguous or live resources, refuses mismatched amounts/currencies/recurrence, and never deletes or archives unrelated resources. A PostgreSQL transaction advisory lock serializes concurrent bootstrap runs.
 
 ## Database mapping
