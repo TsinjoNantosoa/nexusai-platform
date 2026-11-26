@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -34,6 +34,28 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
+
+    @model_validator(mode="after")
+    def validate_security_settings(self) -> "Settings":
+        environment = self.environment.lower()
+        if self.session_ttl_seconds <= 0:
+            raise ValueError("session_ttl_seconds must be positive")
+        if self.cookie_samesite.lower() not in {"lax", "strict", "none"}:
+            raise ValueError("cookie_samesite must be lax, strict, or none")
+        if self.auth_rate_limit <= 0 or self.auth_rate_window_seconds <= 0:
+            raise ValueError("Authentication rate-limit settings must be positive")
+        if environment in {"production", "prod"}:
+            if not self.cookie_secure:
+                raise ValueError("Secure cookies are required in production")
+            if not self.allowed_origins or "*" in self.allowed_origins:
+                raise ValueError("Production allowed_origins must be explicit")
+            if any(not origin.lower().startswith("https://") for origin in self.allowed_origins):
+                raise ValueError("Production allowed_origins must use HTTPS")
+            if not self.trusted_hosts or "*" in self.trusted_hosts:
+                raise ValueError("Production trusted_hosts must be explicit")
+            if self.cookie_samesite.lower() == "none" and not self.cookie_secure:
+                raise ValueError("SameSite=None requires Secure cookies")
+        return self
 
 
 @lru_cache
