@@ -1,6 +1,6 @@
 # Stripe Sandbox setup
 
-This procedure is for the temporary Stripe Sandbox only. It prepares configuration for Phase 3.1; it does not create products, prices, Checkout Sessions, subscriptions, refunds, or webhook business logic.
+This procedure is for the temporary Stripe Sandbox only. Phase 3.1 provides an explicit product/price catalogue bootstrap; it does not create Checkout Sessions, subscriptions, refunds, or webhook business logic.
 
 ## Safety rules
 
@@ -8,7 +8,7 @@ This procedure is for the temporary Stripe Sandbox only. It prepares configurati
 - Keep the key in the WSL2 process environment only for the shortest required session. Do not create `.env` files for the key.
 - Stripe test and restricted keys are server-side credentials. The documented prefixes are `sk_test_` and `rk_test_`; live prefixes are rejected by application configuration.
 - The owner-requested `rkcs_test_` format is accepted for compatibility but is not confirmed by the official documentation reviewed for this phase. Verify it with the owner’s Sandbox output before use.
-- Do not run `stripe listen` until Phase 3.1 adds and tests a webhook endpoint.
+- Do not run `stripe listen` until a tested webhook endpoint is approved.
 - Do not disable Windows Smart App Control or other Windows security policies.
 
 ## Project-isolated Compose
@@ -25,7 +25,7 @@ The disposable integration URL is the test service on port `56433`; the project 
 
 ## Secure environment handoff
 
-The following reads secrets interactively and never places their values in shell history. Run only in the owner’s WSL2 session, and unset them when finished. The webhook secret should remain unset until an approved Phase 3.1 endpoint and forwarding session exist.
+The following reads secrets interactively and never places their values in shell history. Run only in the owner’s WSL2 session, and unset them when finished. The webhook secret may remain unset for catalogue work; it is still required whenever the application is enabled because webhook processing is not implemented here.
 
 ```bash
 cd /mnt/c/Users/Tsinjo/Documents/projet/nexusai-stripe
@@ -37,21 +37,30 @@ export NEXUSAI_FRONTEND_BASE_URL=http://127.0.0.1:5173
 export API_PROXY_TARGET=http://127.0.0.1:8100
 ```
 
-Keep `NEXUSAI_STRIPE_ENABLED=false` for Phase 3.0. When Phase 3.1 has an approved webhook endpoint and the owner has obtained its Sandbox signing secret, enable the integration in the same private session:
+For an owner-controlled catalogue run, export the key in the same private session and set `NEXUSAI_STRIPE_ENABLED=true`. The application fails closed if enabled without both configured secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values.
 
-```bash
-read -r -s -p 'Stripe Sandbox webhook signing secret: ' NEXUSAI_STRIPE_WEBHOOK_SECRET
-printf '\n'
-export NEXUSAI_STRIPE_ENABLED=true
-docker compose --project-name nexusai-phase3-stripe up -d --build
-```
-
-The application fails closed if enabled without both secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values. When finished:
+When finished:
 
 ```bash
 unset NEXUSAI_STRIPE_SECRET_KEY NEXUSAI_STRIPE_WEBHOOK_SECRET
 unset NEXUSAI_STRIPE_ENABLED NEXUSAI_STRIPE_API_VERSION NEXUSAI_FRONTEND_BASE_URL API_PROXY_TARGET
 ```
+
+## Owner catalogue procedure
+
+After reviewing the dry-run, the owner may run the following commands without sharing credentials with Codex:
+
+```bash
+cd /mnt/c/Users/Tsinjo/Documents/projet/nexusai-stripe
+docker compose --project-name nexusai-phase3-stripe up -d --build
+docker compose --project-name nexusai-phase3-stripe exec backend python -m alembic upgrade head
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --dry-run
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --verify
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+```
+
+The final repeat should reuse all three products and prices. Inspect the Sandbox separately; never treat a local success message as proof of an owner-verified remote catalogue.
 
 ## Verification without exposing secrets
 
@@ -64,8 +73,8 @@ curl --fail http://127.0.0.1:8100/health/live
 curl --fail http://127.0.0.1:8100/health/ready
 ```
 
-Stripe CLI authentication and product listing may be verified by the owner in the Sandbox session, but no product creation belongs to Phase 3.0. A future webhook forwarding command must target the approved Phase 3.1 route and must retain the CLI-generated signing secret only in the owner’s secure environment.
-
 ## Recovery and expiry
 
 The temporary Sandbox expires after seven days according to the owner’s setup context. Treat all test product, price, customer, and event identifiers as disposable. Before expiry, record only non-secret configuration metadata and recreate the Sandbox deliberately; never commit or export the key.
+
+When the temporary Sandbox expires, create a new private key, confirm the new account identity, keep the old account mappings for history, and rerun `--dry-run`, `--apply`, `--verify`, and a second `--apply`. The account-scoped mapping table prevents IDs from the expired account from being treated as valid in the replacement account.

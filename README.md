@@ -6,7 +6,7 @@ NexusAI is a French/English AI-character chat demonstration. The repository cont
 
 - Phase 1.1 frontend stabilization is merged in the local `origin/main` baseline.
 - Phase 2 implements registration, login, logout, current-user sessions, CSRF bootstrap, roles, wallet ledger primitives, products, migrations, health checks, and local Docker infrastructure.
-- Stripe Checkout, Customer Portal, signed webhooks, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
+- Stripe catalogue preparation is implemented in Phase 3.1. Checkout, Customer Portal, signed webhooks, payment settlement, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
 
 ## Local startup
 
@@ -31,6 +31,18 @@ The backend container runs `alembic upgrade head` and the idempotent product see
 docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.db.seed
 ```
+
+After the owner has supplied private Sandbox credentials to the backend process, the explicit catalogue procedure is:
+
+```powershell
+docker compose --project-name nexusai-phase3-stripe exec backend python -m alembic upgrade head
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --dry-run
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --verify
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+```
+
+The owner must inspect the Sandbox after `--apply`; Codex does not execute that command with owner credentials. The final repeat demonstrates idempotent reuse. See `docs/architecture/STRIPE_CATALOGUE.md` and `docs/operations/STRIPE_SANDBOX_SETUP.md`.
 
 Integration tests use a separate disposable PostgreSQL service. They fail closed when the explicit test configuration is missing and never fall back to the development database:
 

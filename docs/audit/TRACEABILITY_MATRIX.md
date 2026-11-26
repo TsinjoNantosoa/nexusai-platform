@@ -6,7 +6,7 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 | --- | --- | --- | --- |
 | F01 registration/login/logout | IMPLEMENTED | FastAPI auth routes, Argon2id, session tests | Email verification and password reset are deferred. |
 | F02 profile/session | IMPLEMENTED | `/users/me`, expiry/revocation, HttpOnly cookie tests | Production TLS topology remains to validate. |
-| F03 catalogue | IMPLEMENTED | PostgreSQL products, idempotent seed, `/billing/products` | Stripe identifiers remain unset. |
+| F03 catalogue | IMPLEMENTED | PostgreSQL products, idempotent seed, `/billing/products`, Phase 3.1 Stripe catalogue bootstrap and account-scoped mappings | Checkout and payment settlement remain deferred. |
 | F06 wallet/ledger | IMPLEMENTED | Atomic wallet service, immutable entries, row locks, concurrency tests | Paid credit workflows are deferred to Phase 3. |
 | F12 admin access | PARTIAL | Server-side role dependency and denied regular-user test | Moderation persistence/workflows are deferred. |
 | S01 password/session security | IMPLEMENTED | Argon2id, token hashes, expiry, revocation, rotation, secure production validation | Email/password recovery is deferred. |
@@ -14,7 +14,7 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 | S06 abuse protection | PARTIAL | Deterministic process-local auth sliding window, 429, recovery, forwarded-header bypass test | Shared rate limiting is required for multiple instances. |
 | DB migrations | IMPLEMENTED | Alembic upgrade, downgrade, upgrade against PostgreSQL | No automatic schema creation in the application. |
 | Local infrastructure | IMPLEMENTED | Project-specific Compose network, volume, healthchecks, non-root backend, restart persistence validation | Production orchestration is out of scope. |
-| Stripe/AI | DEFERRED | Explicit `integration_pending` payment boundary | Phase 3/4. |
+| Stripe/AI | PARTIAL | Sandbox-only catalogue client, explicit bootstrap, validated product/price mappings | Checkout, webhooks, subscriptions, refunds, and AI remain deferred. |
 | Frontend API mode | IMPLEMENTED | CSRF bootstrap/rotation in `HttpApiClient`, real browser journey | Mock mode remains independent. |
 
 ## Evidence
