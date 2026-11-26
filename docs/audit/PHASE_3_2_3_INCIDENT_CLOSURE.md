@@ -150,11 +150,11 @@ They remain build/development-chain findings, not runtime Checkout dependencies.
 
 ## 7. Final Phase Decision
 
-**Incident:** OPEN but contained; awaiting owner handling of the still-open unpaid Session.  
-**Isolation:** GO.  
-**Local runtime:** GO.  
-**Demo activation:** NO-GO until explicit owner approval.  
-**Manual Sandbox payment:** NO-GO until incident review.  
+**Incident:** OPEN but contained; awaiting owner handling of the still-open unpaid Session.
+**Isolation:** GO.
+**Local runtime:** GO.
+**Demo activation:** NO-GO until explicit owner approval.
+**Manual Sandbox payment:** NO-GO until incident review.
 **Phase 3.3:** NO-GO before owner payment validation.
 
 No push, merge, deployment or Phase 3.3 work was performed.
