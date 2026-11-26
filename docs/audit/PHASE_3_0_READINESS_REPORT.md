@@ -1,9 +1,9 @@
 # NexusAI Phase 3.0 readiness report
 
-Date: 2026-11-26  
-Worktree: `C:\Users\Tsinjo\Documents\projet\nexusai-stripe`  
-Branch: `feat/stripe-integration`  
-Baseline: `54d7292`  
+Date: 2026-11-26
+Worktree: `C:\Users\Tsinjo\Documents\projet\nexusai-stripe`
+Branch: `feat/stripe-integration`
+Baseline: `54d7292`
 Scope: Stripe Sandbox technical preparation only
 
 ## Decision
