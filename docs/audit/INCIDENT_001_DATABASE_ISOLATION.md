@@ -1,8 +1,8 @@
 # INCIDENT-001 — Development database targeted by migration validation
 
-Date: 2026-11-26  
-Severity: **SEV-2 equivalent — local development data loss; no production impact found**  
-Status: Contained; owner review required  
+Date: 2026-11-26
+Severity: **SEV-2 equivalent — local development data loss; no production impact found**
+Status: Contained; owner review required
 Branch: `feat/backend-foundation`
 
 ## Summary

@@ -1,7 +1,7 @@
 # Phase 2.2 database safety report
 
-Date: 2026-11-26  
-Branch: `feat/backend-foundation`  
+Date: 2026-11-26
+Branch: `feat/backend-foundation`
 Scope: database isolation, destructive-operation controls, incident review, and quality gate
 
 ## Outcome
