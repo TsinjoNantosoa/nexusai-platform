@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
     stripe_api_version: str = "2026-11-18.endive"
+    stripe_request_timeout_seconds: int = 30
+    stripe_max_network_retries: int = 2
     frontend_base_url: str = "http://localhost:5173"
 
     @field_validator("allowed_origins", "trusted_hosts", mode="before")
@@ -66,6 +68,10 @@ class Settings(BaseSettings):
             raise ValueError("cookie_samesite must be lax, strict, or none")
         if self.auth_rate_limit <= 0 or self.auth_rate_window_seconds <= 0:
             raise ValueError("Authentication rate-limit settings must be positive")
+        if self.stripe_request_timeout_seconds <= 0:
+            raise ValueError("stripe_request_timeout_seconds must be positive")
+        if not 0 <= self.stripe_max_network_retries <= 3:
+            raise ValueError("stripe_max_network_retries must be between 0 and 3")
         if self.stripe_secret_key is not None:
             key = self.stripe_secret_key.get_secret_value()
             allowed_prefixes = ("sk_test_", "rk_test_", "rkcs_test_", "csk_rk_test_")
