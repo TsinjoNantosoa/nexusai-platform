@@ -33,3 +33,7 @@ Phase 2.1 recorded 37 frontend tests, lint, typecheck, build, API and mock brows
 ## Remaining limitations
 
 The development database contains the recreated local state described in `INCIDENT_001_DATABASE_ISOLATION.md`, not the pre-incident state. Production database provisioning, managed backups/PITR, secret management, and a restore drill remain owner-operated work and are not claims of this phase.
+
+## Browser rerun note
+
+A fresh Phase 2.2 rerun of the browser scripts did not complete: the API journey timed out waiting for the wallet navigation, and the mock/responsive sequence timed out before reporting results. The controlled servers returned HTTP 200, but their active runtime configuration was not established by the scripts. These attempts are not counted as new passes; the prior Phase 2.1 evidence remains 37 frontend tests and 130 responsive checks. The owner should rerun the journeys with explicitly controlled mock/API Vite processes before publication.
