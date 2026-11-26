@@ -6,6 +6,11 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 
+from isolation import assert_isolated_e2e_environment
+
+
+assert_isolated_e2e_environment()
+
 
 BASE_URL = "http://localhost:8080"
 VIEWPORTS = [

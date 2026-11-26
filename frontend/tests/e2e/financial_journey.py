@@ -1,6 +1,12 @@
 import asyncio,json
 from pathlib import Path
 from playwright.async_api import async_playwright
+
+from isolation import assert_isolated_e2e_environment
+
+
+assert_isolated_e2e_environment()
+
 OUT=Path('/tmp/browser/nexus')
 async def main():
  async with async_playwright() as p:

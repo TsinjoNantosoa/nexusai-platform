@@ -52,9 +52,10 @@ def test_health_and_products_are_available(client: TestClient) -> None:
     }
 
 
-def test_product_seed_is_idempotent(db_engine: Engine) -> None:
-    seed_products()
-    seed_products()
+def test_product_seed_is_idempotent(db_engine: Engine, test_database_url: str) -> None:
+    test_settings = Settings(database_url=test_database_url)
+    seed_products(test_settings)
+    seed_products(test_settings)
     factory = build_session_factory(db_engine)
     with factory() as session:
         assert len(session.execute(select(Product)).all()) == 4

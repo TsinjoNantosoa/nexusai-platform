@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.db.models import Product
 from app.db.session import build_engine, build_session_factory
 
@@ -26,9 +26,9 @@ PRODUCTS = (
 )
 
 
-def seed_products() -> None:
-    settings = get_settings()
-    engine = build_engine(settings)
+def seed_products(settings: Settings | None = None) -> None:
+    resolved_settings = settings or get_settings()
+    engine = build_engine(resolved_settings)
     factory = build_session_factory(engine)
     with factory.begin() as session:
         for values in PRODUCTS:

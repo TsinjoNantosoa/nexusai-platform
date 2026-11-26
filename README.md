@@ -6,21 +6,24 @@ NexusAI is a French/English AI-character chat demonstration. The repository cont
 
 - Phase 1.1 frontend stabilization is merged in the local `origin/main` baseline.
 - Phase 2 implements registration, login, logout, current-user sessions, CSRF bootstrap, roles, wallet ledger primitives, products, migrations, health checks, and local Docker infrastructure.
-- Stripe Checkout, Customer Portal, signed webhooks, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
+- Stripe catalogue preparation and Sandbox-only hosted Checkout are implemented through Phase 3.2. Webhooks, wallet fulfillment, Customer Portal, subscriptions, refunds, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
 
 ## Local startup
 
 Requirements: Python 3.12, Docker Compose, Bun, and an available Docker daemon.
 
 ```powershell
-docker compose up -d --build
+docker compose --project-name nexusai-phase3-stripe up -d --build
 cd frontend
 bun install --frozen-lockfile
 $env:VITE_DATA_MODE = "api"
+$env:API_PROXY_TARGET = "http://127.0.0.1:8100"
 bun run dev
 ```
 
-The frontend runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`. Compose uses PostgreSQL on `127.0.0.1:55432` and a project-specific volume/network. It does not touch another PostgreSQL service.
+The frontend runs at `http://localhost:5173`; the backend runs at `http://localhost:8100`. Compose uses PostgreSQL on `127.0.0.1:56432` and a Phase 3-specific volume/network. It does not touch another PostgreSQL service.
+
+For the Stripe preparation worktree, use the project-specific ports `8100`, `56432`, and `56433`; see `docs/operations/STRIPE_SANDBOX_SETUP.md`. Never start this worktree against the Phase 2 volumes.
 
 The backend container runs `alembic upgrade head` and the idempotent product seed at startup. The explicit procedure is:
 
@@ -28,6 +31,18 @@ The backend container runs `alembic upgrade head` and the idempotent product see
 docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.db.seed
 ```
+
+After the owner has supplied private Sandbox credentials to the backend process, the explicit catalogue procedure is:
+
+```powershell
+docker compose --project-name nexusai-phase3-stripe exec backend python -m alembic upgrade head
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --dry-run
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --verify
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.bootstrap --apply
+```
+
+The owner must inspect the Sandbox after `--apply`; Codex does not execute that command with owner credentials. The final repeat demonstrates idempotent reuse. See `docs/architecture/STRIPE_CATALOGUE.md` and `docs/operations/STRIPE_SANDBOX_SETUP.md`.
 
 Integration tests use a separate disposable PostgreSQL service. They fail closed when the explicit test configuration is missing and never fall back to the development database:
 

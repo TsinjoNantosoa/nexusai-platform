@@ -1,7 +1,30 @@
 import pytest
 from app.core.config import Settings
 from app.core.security import hash_password, hash_token, new_token, tokens_equal, verify_password
+from app.core.test_safety import AutomatedTestSafetyError, validate_automated_test_environment
 from pydantic import ValidationError
+from stripe._http_client import RequestsClient
+
+
+def test_automated_tests_reject_inherited_stripe_credentials() -> None:
+    with pytest.raises(AutomatedTestSafetyError):
+        validate_automated_test_environment(
+            {
+                "NEXUSAI_STRIPE_ENABLED": "false",
+                "NEXUSAI_STRIPE_SECRET_KEY": "sk_test_owner_value",
+            }
+        )
+
+
+def test_automated_tests_require_stripe_disabled() -> None:
+    with pytest.raises(AutomatedTestSafetyError):
+        validate_automated_test_environment({"NEXUSAI_STRIPE_ENABLED": "true"})
+    validate_automated_test_environment({"NEXUSAI_STRIPE_ENABLED": "false"})
+
+
+def test_automated_stripe_client_cannot_reach_network() -> None:
+    with pytest.raises(AssertionError, match="forbidden during automated tests"):
+        RequestsClient().request("GET", "https://api.stripe.com/v1/account", {}, None)
 
 
 def test_argon2_passwords_are_one_way_and_verifiable() -> None:
@@ -29,6 +52,76 @@ def test_development_configuration_allows_local_http() -> None:
     )
 
     assert settings.cookie_secure is False
+
+
+def test_stripe_is_disabled_by_default_and_secret_values_are_masked() -> None:
+    settings = Settings()
+
+    assert settings.stripe_enabled is False
+    assert settings.stripe_secret_key is None
+    assert "sk_test_sandbox-placeholder" not in repr(
+        Settings(stripe_secret_key="sk_test_sandbox-placeholder")
+    )
+
+
+def test_stripe_non_secret_configuration_is_validated() -> None:
+    settings = Settings(
+        stripe_api_version="2026-11-18.endive",
+        frontend_base_url="http://localhost:5173/",
+    )
+    assert settings.frontend_base_url == "http://localhost:5173"
+    with pytest.raises(ValidationError):
+        Settings(stripe_api_version="latest")
+    with pytest.raises(ValidationError):
+        Settings(frontend_base_url="/relative")
+
+
+def test_enabled_stripe_requires_sandbox_secrets() -> None:
+    with pytest.raises(ValidationError):
+        Settings(stripe_enabled=True, stripe_secret_key="sk_test_sandbox-placeholder")
+    with pytest.raises(ValidationError):
+        Settings(
+            stripe_enabled=True,
+            stripe_webhook_secret="whsec_sandbox-placeholder",
+        )
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="production",
+            stripe_enabled=True,
+            stripe_secret_key="sk_test_sandbox-placeholder",
+            stripe_webhook_secret="whsec_sandbox-placeholder",
+            allowed_origins=["https://app.example.test"],
+            trusted_hosts=["app.example.test"],
+            cookie_secure=True,
+        )
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "sk_live_sandbox-placeholder",
+        "rk_live_sandbox-placeholder",
+        "unexpected-key-format",
+    ],
+)
+def test_stripe_rejects_live_and_unknown_key_formats(key: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(stripe_secret_key=key)
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "sk_test_sandbox-placeholder",
+        "rk_test_sandbox-placeholder",
+        "rkcs_test_sandbox-placeholder",
+        "csk_rk_test_sandbox-placeholder",
+    ],
+)
+def test_stripe_accepts_sandbox_key_formats(key: str) -> None:
+    settings = Settings(stripe_secret_key=key)
+
+    assert settings.stripe_secret_key is not None
 
 
 def test_production_configuration_requires_secure_explicit_origins() -> None:

@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
@@ -128,6 +129,7 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
     )
@@ -138,6 +140,142 @@ class Product(Base):
         CheckConstraint(
             "product_type IN ('free', 'one_time', 'recurring')", name="ck_products_type"
         ),
+    )
+
+
+class StripeCatalogueMapping(Base):
+    __tablename__ = "stripe_catalogue_mappings"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    product_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False
+    )
+    stripe_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    stripe_product_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    stripe_price_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    catalogue_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    synchronized_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+    product: Mapped[Product] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "stripe_account_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_product_account_version",
+        ),
+        UniqueConstraint(
+            "stripe_account_id",
+            "stripe_product_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_product_account_resource",
+        ),
+        UniqueConstraint(
+            "stripe_account_id",
+            "stripe_price_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_price_account_resource",
+        ),
+        Index("ix_stripe_mapping_account_product", "stripe_account_id", "product_id"),
+    )
+
+
+class StripeCustomerMapping(Base):
+    __tablename__ = "stripe_customer_mappings"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    stripe_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(120))
+    creation_status: Mapped[str] = mapped_column(String(16), nullable=False, default="creating")
+    creation_idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "stripe_account_id", name="uq_stripe_customer_user_account"),
+        UniqueConstraint(
+            "stripe_account_id", "stripe_customer_id", name="uq_stripe_customer_account_id"
+        ),
+        CheckConstraint(
+            "creation_status IN ('creating', 'ready', 'unknown')",
+            name="ck_stripe_customer_creation_status",
+        ),
+        Index("ix_stripe_customer_account_user", "stripe_account_id", "user_id"),
+    )
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    product_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("products.id"), nullable=False
+    )
+    sku_snapshot: Mapped[str] = mapped_column(String(32), nullable=False)
+    name_snapshot: Mapped[str] = mapped_column(String(80), nullable=False)
+    price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    gems: Mapped[int] = mapped_column(Integer, nullable=False)
+    stripe_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    stripe_product_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    stripe_price_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(120))
+    checkout_session_id: Mapped[str | None] = mapped_column(String(120))
+    payment_intent_id: Mapped[str | None] = mapped_column(String(120))
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    checkout_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    payment_status: Mapped[str] = mapped_column(String(32), nullable=False, default="unpaid")
+    fulfillment_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    session_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "stripe_account_id",
+            "checkout_session_id",
+            name="uq_orders_account_checkout_session",
+        ),
+        UniqueConstraint(
+            "stripe_account_id",
+            "payment_intent_id",
+            name="uq_orders_account_payment_intent",
+        ),
+        CheckConstraint("price_cents > 0", name="ck_orders_positive_price"),
+        CheckConstraint("gems > 0", name="ck_orders_positive_gems"),
+        CheckConstraint(
+            "checkout_status IN ('pending', 'creating', 'created', 'unknown')",
+            name="ck_orders_checkout_status",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'paid', 'failed', 'canceled', 'expired')",
+            name="ck_orders_status",
+        ),
+        CheckConstraint(
+            "fulfillment_status IN ('pending', 'fulfilled')",
+            name="ck_orders_fulfillment_status",
+        ),
+        Index("ix_orders_user_created", "user_id", "created_at"),
+        Index("ix_orders_user_status", "user_id", "status"),
     )
 
 

@@ -6,6 +6,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from app.core.config import Settings
+from app.core.test_safety import validate_automated_test_environment
 from app.db.models import Product
 from app.db.safety import (
     DatabaseIdentity,
@@ -19,6 +20,9 @@ from app.main import create_app
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from stripe._http_client import RequestsClient
+
+validate_automated_test_environment()
 
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCTS = (
@@ -27,6 +31,20 @@ PRODUCTS = (
     ("plus", "Plus", "one_time", 999, 500),
     ("premium", "Premium", "recurring", 1999, 1500),
 )
+
+
+@pytest.fixture(autouse=True)
+def prohibit_stripe_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    def reject_network(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Stripe network access is forbidden during automated tests.")
+
+    for method_name in (
+        "request",
+        "request_with_retries",
+        "request_stream",
+        "request_stream_with_retries",
+    ):
+        monkeypatch.setattr(RequestsClient, method_name, reject_network)
 
 
 @pytest.fixture(scope="session")
@@ -74,7 +92,8 @@ def clean_database(db_engine: Engine, test_database_url: str) -> Iterator[None]:
     with db_engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE audit_logs, wallet_entries, wallets, sessions, products, users "
+                "TRUNCATE orders, stripe_customer_mappings, audit_logs, wallet_entries, "
+                "wallets, sessions, products, users "
                 "RESTART IDENTITY CASCADE"
             )
         )

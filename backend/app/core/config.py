@@ -1,7 +1,9 @@
+import re
 from functools import lru_cache
 from typing import Annotated
+from urllib.parse import urlparse
 
-from pydantic import field_validator, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"
-    database_url: str = "postgresql+psycopg://nexusai:nexusai@localhost:55432/nexusai"
+    database_url: str = "postgresql+psycopg://nexusai:nexusai@localhost:56432/nexusai"
     allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -27,6 +29,15 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"
     auth_rate_limit: int = 10
     auth_rate_window_seconds: int = 60
+    checkout_rate_limit: int = 6
+    checkout_rate_window_seconds: int = 60
+    stripe_enabled: bool = False
+    stripe_secret_key: SecretStr | None = None
+    stripe_webhook_secret: SecretStr | None = None
+    stripe_api_version: str = "2026-11-18.endive"
+    stripe_request_timeout_seconds: int = 30
+    stripe_max_network_retries: int = 2
+    frontend_base_url: str = "http://localhost:5173"
 
     @field_validator("allowed_origins", "trusted_hosts", mode="before")
     @classmethod
@@ -34,6 +45,21 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
+
+    @field_validator("stripe_api_version")
+    @classmethod
+    def validate_stripe_api_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:\.[a-z0-9]+)?", value):
+            raise ValueError("stripe_api_version must be a Stripe date-based API version")
+        return value
+
+    @field_validator("frontend_base_url")
+    @classmethod
+    def validate_frontend_base_url(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError("frontend_base_url must be an absolute HTTP(S) URL")
+        return value.rstrip("/")
 
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
@@ -44,6 +70,25 @@ class Settings(BaseSettings):
             raise ValueError("cookie_samesite must be lax, strict, or none")
         if self.auth_rate_limit <= 0 or self.auth_rate_window_seconds <= 0:
             raise ValueError("Authentication rate-limit settings must be positive")
+        if self.checkout_rate_limit <= 0 or self.checkout_rate_window_seconds <= 0:
+            raise ValueError("Checkout rate-limit settings must be positive")
+        if self.stripe_request_timeout_seconds <= 0:
+            raise ValueError("stripe_request_timeout_seconds must be positive")
+        if not 0 <= self.stripe_max_network_retries <= 3:
+            raise ValueError("stripe_max_network_retries must be between 0 and 3")
+        if self.stripe_secret_key is not None:
+            key = self.stripe_secret_key.get_secret_value()
+            allowed_prefixes = ("sk_test_", "rk_test_", "rkcs_test_", "csk_rk_test_")
+            if not key.startswith(allowed_prefixes):
+                raise ValueError("Only Stripe Sandbox API key formats are accepted")
+        if self.stripe_enabled and (
+            self.stripe_secret_key is None or self.stripe_webhook_secret is None
+        ):
+            raise ValueError(
+                "Stripe requires both Sandbox API and webhook secrets when enabled"
+            )
+        if self.stripe_enabled and environment in {"production", "prod"}:
+            raise ValueError("Stripe Sandbox mode cannot be enabled in production")
         if environment in {"production", "prod"}:
             if not self.cookie_secure:
                 raise ValueError("Secure cookies are required in production")

@@ -125,7 +125,7 @@ export class HttpApiClient implements ApiClient {
     return this.request<Entry[]>("/wallet/transactions");
   }
   orders(): Promise<Order[]> {
-    return this.pending();
+    return this.request<Order[]>("/billing/orders");
   }
   async checkout(sku: Sku, key: string) {
     const result = await this.request<{ checkout_url: string; order_id: string }>(

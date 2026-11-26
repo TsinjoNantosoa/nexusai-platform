@@ -155,6 +155,7 @@ export function PricingPage() {
         setSelected(null);
         await navigate({ to: "/billing/success", search: { order: order.id } });
       } else {
+        if (!order.checkoutUrl) throw new Error("invalid_checkout_url");
         const parsed = new URL(order.checkoutUrl);
         if (parsed.protocol !== "https:" || parsed.hostname !== "checkout.stripe.com")
           throw new Error("invalid_checkout_url");
@@ -213,6 +214,7 @@ export function PricingPage() {
                 !online ||
                 busy ||
                 wallet.data?.inReview ||
+                (!isMock && p.sku === "premium") ||
                 (p.subscription && wallet.data?.subscription.status === "active")
               }
               variant={p.sku === "plus" || p.subscription ? "default" : "outline"}
@@ -225,11 +227,13 @@ export function PricingPage() {
                 ? session.data
                   ? t("pricing.current")
                   : t("auth.register")
-                : p.subscription
-                  ? wallet.data?.subscription.status === "active"
-                    ? t("pricing.current")
-                    : t("pricing.subscribe")
-                  : t("pricing.choose")}
+                : p.subscription && !isMock
+                  ? t("pricing.unavailable")
+                  : p.subscription
+                    ? wallet.data?.subscription.status === "active"
+                      ? t("pricing.current")
+                      : t("pricing.subscribe")
+                    : t("pricing.choose")}
               <ArrowUpRight />
             </Button>
           </article>
@@ -631,7 +635,7 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
               : "billing.pendingDesc",
         )}
       </p>
-      {phase === "confirmed" && order && (
+      {phase === "confirmed" && order && isMock && (
         <div className="confirmed-gems">
           +{order.gems} {t("pricing.gems")}
         </div>

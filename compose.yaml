@@ -1,4 +1,4 @@
-name: nexusai-phase2
+name: nexusai-phase3-stripe
 
 services:
   postgres:
@@ -8,16 +8,16 @@ services:
       POSTGRES_USER: nexusai
       POSTGRES_PASSWORD: nexusai
     ports:
-      - "127.0.0.1:55432:5432"
+      - "127.0.0.1:56432:5432"
     volumes:
-      - nexusai_phase2_postgres:/var/lib/postgresql/data
+      - nexusai_phase3_stripe_postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexusai -d nexusai"]
       interval: 5s
       timeout: 5s
       retries: 12
     networks:
-      - nexusai_phase2
+      - nexusai_phase3_stripe
 
   postgres-test:
     profiles: ["test"]
@@ -27,16 +27,16 @@ services:
       POSTGRES_USER: nexusai_test
       POSTGRES_PASSWORD: nexusai_test
     ports:
-      - "127.0.0.1:55433:5432"
+      - "127.0.0.1:56433:5432"
     volumes:
-      - nexusai_phase2_test_postgres:/var/lib/postgresql/data
+      - nexusai_phase3_stripe_test_postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nexusai_test -d nexusai_test"]
       interval: 5s
       timeout: 5s
       retries: 12
     networks:
-      - nexusai_phase2_test
+      - nexusai_phase3_stripe_test
 
   backend:
     build:
@@ -46,11 +46,18 @@ services:
       NEXUSAI_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
       NEXUSAI_TRUSTED_HOSTS: localhost,127.0.0.1,backend
       NEXUSAI_COOKIE_SECURE: "false"
+      NEXUSAI_STRIPE_ENABLED: ${NEXUSAI_STRIPE_DEMO_ENABLED:-false}
+      NEXUSAI_STRIPE_SECRET_KEY: ${NEXUSAI_STRIPE_DEMO_SECRET_KEY:-rkcs_test_disabled_placeholder}
+      NEXUSAI_STRIPE_WEBHOOK_SECRET: ${NEXUSAI_STRIPE_DEMO_WEBHOOK_SECRET:-whsec_disabled_placeholder}
+      NEXUSAI_STRIPE_API_VERSION: ${NEXUSAI_STRIPE_API_VERSION:-2026-11-18.endive}
+      NEXUSAI_STRIPE_REQUEST_TIMEOUT_SECONDS: ${NEXUSAI_STRIPE_REQUEST_TIMEOUT_SECONDS:-30}
+      NEXUSAI_STRIPE_MAX_NETWORK_RETRIES: ${NEXUSAI_STRIPE_MAX_NETWORK_RETRIES:-2}
+      NEXUSAI_FRONTEND_BASE_URL: ${NEXUSAI_FRONTEND_BASE_URL:-http://localhost:5173}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8100:8000"
     command: ["sh", "-c", "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
@@ -58,16 +65,16 @@ services:
       timeout: 5s
       retries: 12
     networks:
-      - nexusai_phase2
+      - nexusai_phase3_stripe
 
 networks:
-  nexusai_phase2:
-    name: nexusai_phase2
-  nexusai_phase2_test:
-    name: nexusai_phase2_test
+  nexusai_phase3_stripe:
+    name: nexusai_phase3_stripe
+  nexusai_phase3_stripe_test:
+    name: nexusai_phase3_stripe_test
 
 volumes:
-  nexusai_phase2_postgres:
-    name: nexusai_phase2_postgres
-  nexusai_phase2_test_postgres:
-    name: nexusai_phase2_test_postgres
+  nexusai_phase3_stripe_postgres:
+    name: nexusai_phase3_stripe_postgres
+  nexusai_phase3_stripe_test_postgres:
+    name: nexusai_phase3_stripe_test_postgres
