@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
@@ -128,6 +129,7 @@ class Product(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False
     )
@@ -138,6 +140,46 @@ class Product(Base):
         CheckConstraint(
             "product_type IN ('free', 'one_time', 'recurring')", name="ck_products_type"
         ),
+    )
+
+
+class StripeCatalogueMapping(Base):
+    __tablename__ = "stripe_catalogue_mappings"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    product_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False
+    )
+    stripe_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    stripe_product_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    stripe_price_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    catalogue_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    synchronized_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+    product: Mapped[Product] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "stripe_account_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_product_account_version",
+        ),
+        UniqueConstraint(
+            "stripe_account_id",
+            "stripe_product_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_product_account_resource",
+        ),
+        UniqueConstraint(
+            "stripe_account_id",
+            "stripe_price_id",
+            "catalogue_version",
+            name="uq_stripe_mapping_price_account_resource",
+        ),
+        Index("ix_stripe_mapping_account_product", "stripe_account_id", "product_id"),
     )
 
 
