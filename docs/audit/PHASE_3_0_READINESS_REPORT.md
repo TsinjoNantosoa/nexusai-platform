@@ -89,3 +89,12 @@ Validation completed without using a Stripe secret:
 - `docs/operations/STRIPE_SANDBOX_SETUP.md`
 
 The authoritative `frontend/docs/CAHIER_DES_CHARGES.md` remains unchanged.
+
+## 8. Local Git status at handoff
+
+- Branch: `feat/stripe-integration`
+- HEAD: `f7f5a82`
+- Working tree: clean
+- Relation to `origin/main`: ahead by 2 local commits
+- Local commits: `0ac1149 feat(stripe): prepare sandbox configuration`; `f7f5a82 docs: clean Phase 3 readiness formatting`
+- Remote operations: none; no push, merge, pull request, deployment, or publication
