@@ -10,3 +10,11 @@ Migration `0001_initial` creates `users`, `sessions`, `wallets`, `wallet_entries
 - Foreign keys use explicit delete behavior; indexes cover sessions, wallet history, and audit chronology.
 
 Future payment, conversation, AI request, subscription, and Stripe event tables are not created until their approved contracts are implemented.
+
+## Environment topology
+
+- Development uses the `postgres` Compose service, database `nexusai`, role `nexusai`, network `nexusai_phase2`, and volume `nexusai_phase2_postgres`.
+- Disposable integration tests use the profile-only `postgres-test` service, database `nexusai_test`, role `nexusai_test`, network `nexusai_phase2_test`, and volume `nexusai_phase2_test_postgres`.
+- Production is not configured in this repository. Its database URL, role, credentials, and recovery controls must be provisioned separately and must never be reused by tests.
+- Test fixtures and destructive Alembic paths require explicit test URL, database name, role, disposable authorization, and a declared development URL. They verify the effective database and role before issuing destructive SQL.
+- A database name containing `test` is not sufficient isolation. The service, network, volume, identity, and explicit authorization must all match.

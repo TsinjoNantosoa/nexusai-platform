@@ -1,5 +1,7 @@
 # Phase 2.1 test report
 
+> Historical report. The original migration command block records the Phase 2.1 setup and incident context; do not execute it. Use the isolated, fail-closed procedure in `README.md` and `docs/audit/PHASE_2_2_TEST_REPORT.md` for current validation.
+
 ## Backend
 
 Run from `backend/` with the isolated Compose PostgreSQL service and `nexusai_test` database:

@@ -29,6 +29,21 @@ docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.db.seed
 ```
 
+Integration tests use a separate disposable PostgreSQL service. They fail closed when the explicit test configuration is missing and never fall back to the development database:
+
+```powershell
+docker compose --profile test up -d postgres-test
+Set-Location backend
+$env:NEXUSAI_TEST_DATABASE_URL = "postgresql+psycopg://<test-role>:<test-password>@127.0.0.1:55433/nexusai_test"
+$env:NEXUSAI_TEST_DATABASE_NAME = "nexusai_test"
+$env:NEXUSAI_TEST_DATABASE_ROLE = "<test-role>"
+$env:NEXUSAI_TEST_DATABASE_DISPOSABLE = "true"
+$env:NEXUSAI_DEVELOPMENT_DATABASE_URL = "postgresql+psycopg://<dev-role>:<dev-password>@127.0.0.1:55432/nexusai"
+python -m pytest tests -q
+```
+
+Only the disposable test service may be used for destructive fixture cleanup or Alembic downgrade validation. See `docs/operations/DATABASE_BACKUP_RESTORE.md` before any recovery operation.
+
 Provisioning an administrator is explicit and requires an existing fictional local account:
 
 ```powershell

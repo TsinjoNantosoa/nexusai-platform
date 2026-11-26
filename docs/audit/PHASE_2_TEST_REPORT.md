@@ -1,5 +1,7 @@
 # Phase 2 test report
 
+> Historical report. Its original shared-service migration commands are retained as evidence only and must not be executed. The isolated, fail-closed procedure in `README.md` and `docs/audit/PHASE_2_2_TEST_REPORT.md` supersedes them.
+
 ## Backend commands
 
 ```powershell

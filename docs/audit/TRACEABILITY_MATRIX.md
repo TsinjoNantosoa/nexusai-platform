@@ -58,3 +58,16 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 | INF-05 | Frontend Bun/Playwright commands | 37 Vitest tests, build/PWA output, API journey, mock journeys, and 130 responsive checks pass | PASS | Physical Android/iOS installation not tested |
 
 Total: **29/29 PASS** for the local Phase 2.1 acceptance scope. Limitations above remain explicit and do not constitute production-readiness claims.
+
+## Phase 2.2 database safety matrix
+
+| ID | Control / evidence | Result | Boundary |
+| --- | --- | --- | --- |
+| DBSAFE-01 | `postgres-test` has a separate Compose service, network, volume, database, role, and host port | PASS | Disposable local infrastructure only |
+| DBSAFE-02 | `backend/app/db/safety.py` requires explicit test URL, database name, role, and `DISPOSABLE=true` | PASS | Configuration is local and operator-supplied |
+| DBSAFE-03 | Pytest fixtures and destructive Alembic commands reject development/production targets before destructive SQL | PASS | Effective host/port are established by isolated service topology; PostgreSQL identity query verifies database and role |
+| DBSAFE-04 | Nine unit tests cover missing configuration, declared development target, name-only authorization, dev/prod rejection, role mismatch, effective identity mismatch, no-SQL-on-rejection, accepted disposable target, and command classification | PASS | No production database is contacted |
+| DBSAFE-05 | Incident review and backup/recovery policy are recorded | PARTIAL | No pre-incident backup or restore execution was available; owner approval is required for recovery |
+| DBSAFE-06 | Backend regression passes with the isolated PostgreSQL target and development database identity remains unchanged by test operations | PASS | Frontend regression evidence remains from Phase 2.1 |
+
+Phase 3 remains outside this implementation. The owner must review and accept the incident record and final quality gate before any payment or AI work begins.

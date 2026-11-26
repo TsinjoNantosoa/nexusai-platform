@@ -18,6 +18,14 @@ NexusAI is a monorepo with an independent React/Vite frontend and a Python/FastA
 - Keep mock frontend mode independent from API mode; API errors must never silently use mock data.
 - Stripe and AI integrations remain backend responsibilities and are not implemented as fake success paths.
 
+## Database safety
+
+- Never run Alembic downgrades, restores, `TRUNCATE`, drops, or schema recreation against the development or production database.
+- Integration tests require an explicit `NEXUSAI_TEST_DATABASE_URL`, `NEXUSAI_TEST_DATABASE_NAME`, `NEXUSAI_TEST_DATABASE_ROLE`, `NEXUSAI_TEST_DATABASE_DISPOSABLE=true`, and `NEXUSAI_DEVELOPMENT_DATABASE_URL`.
+- Start the disposable PostgreSQL target with `docker compose --profile test up -d postgres-test`; the test target must use its own service, network, volume, database, and role.
+- The reusable database safety guard must run before destructive fixtures or migration commands; a database name containing `test` is not authorization.
+- Obtain owner approval before restoring data or deleting database resources. Never delete volumes or prune Docker resources as part of tests.
+
 ## Git governance
 
 - Work only on the authorized feature branch; never modify `main` directly.
