@@ -92,7 +92,11 @@ $env:VITE_API_BASE_URL = "/api/v1"
 $env:API_PROXY_TARGET = "http://127.0.0.1:8100"
 
 $frontendPath = (Resolve-Path (Join-Path $PSScriptRoot "..\frontend")).Path
-$bun = (Get-Command bun -ErrorAction Stop).Source
+$bunWrapper = (Get-Command bun.ps1 -ErrorAction Stop).Source
+$bun = Join-Path (Split-Path $bunWrapper -Parent) "node_modules\bun\bin\bun.exe"
+if (-not (Test-Path -LiteralPath $bun)) {
+    $bun = (Get-Command bun.cmd -ErrorAction Stop).Source
+}
 $frontend = Start-Process -FilePath $bun -ArgumentList @(
     "run", "dev", "--", "--host", "127.0.0.1", "--port", $FrontendPort
 ) -WorkingDirectory $frontendPath -PassThru -WindowStyle Hidden

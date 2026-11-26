@@ -464,6 +464,7 @@ class CheckoutService:
                 order,
                 None,
                 require_unpaid=False,
+                require_url=False,
             )
         except ApiProblem:
             raise
@@ -610,6 +611,7 @@ def _validate_checkout_session(
     customer_id: str | None,
     *,
     require_unpaid: bool,
+    require_url: bool = True,
 ) -> str:
     session_id = _validate_resource(session, "checkout.session", "Checkout Session")
     if not session_id.startswith("cs_test_") or _is_live(session):
@@ -653,5 +655,7 @@ def _validate_checkout_session(
         or parsed_port is not None
         or not parsed.path
     ):
+        if not require_url and session.get("status") == "expired" and url is None:
+            return ""
         raise ApiProblem("checkout_url_invalid", 503, "Stripe returned an invalid Checkout URL.")
     return url

@@ -206,7 +206,7 @@ class StripeClient:
         return self._iterate(
             "Checkout Session line-item retrieval",
             listing,
-            expected_object="line_item",
+            expected_object="item",
             deserialize=self._client.deserialize,
         )
 

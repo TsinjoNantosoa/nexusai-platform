@@ -236,6 +236,34 @@ def test_order_status_is_owned_and_payment_does_not_fulfill(
     assert status.json()["status"] == "paid"
     assert status.json()["paymentStatus"] == "paid"
     assert status.json()["fulfillmentStatus"] == "pending"
+
+
+def test_expired_checkout_reconciles_without_checkout_url(
+    client: TestClient,
+    mapped_catalogue: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.billing.checkout.StripeClient", FakeStripeClient)
+    register(client, "expired-checkout@example.test")
+    response = client.post(
+        "/api/v1/billing/checkout",
+        headers={**csrf_headers(client), "Idempotency-Key": "expired-checkout-key"},
+        json={"sku": "starter"},
+    )
+    assert response.status_code == 200
+    order_id = response.json()["order_id"]
+    session_id = next(iter(FakeStripeGateway.sessions))
+    FakeStripeGateway.sessions[session_id]["session"].update(
+        {"status": "expired", "payment_status": "unpaid"}
+    )
+    FakeStripeGateway.sessions[session_id]["session"].pop("url")
+
+    status = client.get(f"/api/v1/billing/orders/{order_id}")
+
+    assert status.status_code == 200
+    assert status.json()["status"] == "expired"
+    assert status.json()["paymentStatus"] == "unpaid"
+    assert status.json()["fulfillmentStatus"] == "pending"
     assert client.get("/api/v1/wallet").json()["balance"] == 20
 
 
