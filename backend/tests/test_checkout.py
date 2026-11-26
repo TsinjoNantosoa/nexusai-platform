@@ -195,6 +195,25 @@ def test_duplicate_checkout_reuses_session_and_conflicts_are_rejected(
     assert len([name for name, _ in FakeStripeGateway.calls if name == "create_session"]) == 1
 
 
+def test_duplicate_checkout_rejects_a_session_for_another_customer(
+    client: TestClient,
+    mapped_catalogue: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.billing.checkout.StripeClient", FakeStripeClient)
+    register(client, "customer-binding@example.test")
+    headers = {**csrf_headers(client), "Idempotency-Key": "customer-binding-key"}
+    first = client.post("/api/v1/billing/checkout", headers=headers, json={"sku": "starter"})
+    assert first.status_code == 200
+    session_id = next(iter(FakeStripeGateway.sessions))
+    FakeStripeGateway.sessions[session_id]["session"]["customer"] = "cus_test_other"
+
+    duplicate = client.post("/api/v1/billing/checkout", headers=headers, json={"sku": "starter"})
+
+    assert duplicate.status_code == 409
+    assert duplicate.json()["code"] == "payment_verification_failed"
+
+
 def test_order_status_is_owned_and_payment_does_not_fulfill(
     client: TestClient,
     mapped_catalogue: None,

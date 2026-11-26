@@ -616,7 +616,7 @@ def _validate_checkout_session(
         raise ApiProblem(
             "stripe_resource_invalid", 409, "A live or malformed Checkout Session was returned."
         )
-    expected_customer = customer_id or _resource_id(session.get("customer"))
+    expected_customer = customer_id or order.stripe_customer_id
     metadata = session.get("metadata")
     if not isinstance(metadata, dict):
         raise ApiProblem(
@@ -626,7 +626,7 @@ def _validate_checkout_session(
         session.get("mode") != "payment"
         or session.get("client_reference_id") != str(order.id)
         or metadata.get("nexusai_order_id") != str(order.id)
-        or _resource_id(session.get("customer")) != (expected_customer or order.stripe_customer_id)
+        or _resource_id(session.get("customer")) != expected_customer
         or session.get("amount_total") != order.price_cents
         or str(session.get("currency", "")).lower() != order.currency.lower()
     ):
