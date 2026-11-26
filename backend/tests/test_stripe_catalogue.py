@@ -294,6 +294,41 @@ def test_client_normalizes_paginated_and_created_sdk_resources() -> None:
     assert prices.options == {"idempotency_key": "price-key"}
 
 
+def test_client_normalizes_checkout_line_items_with_stripe_item_object() -> None:
+    sdk = stripe.StripeClient("rkcs_test_placeholder")
+    line_item = sdk_resource(
+        {
+            "id": "li_test_checkout",
+            "object": "item",
+            "price": {"id": "price_test_page", "object": "price"},
+            "quantity": 1,
+        }
+    )
+
+    class Listing:
+        def auto_paging_iter(self):
+            return iter([line_item])
+
+    class LineItemsService:
+        def list(self, _session_id, _params):
+            return Listing()
+
+    client = object.__new__(StripeClient)
+    client._client = SimpleNamespace(
+        deserialize=sdk.deserialize,
+        v1=SimpleNamespace(
+            checkout=SimpleNamespace(
+                sessions=SimpleNamespace(line_items=LineItemsService())
+            )
+        ),
+    )
+
+    items = list(client.list_checkout_session_line_items("cs_test_checkout"))
+
+    assert items[0]["id"] == "li_test_checkout"
+    assert items[0]["price"]["id"] == "price_test_page"
+
+
 def test_malformed_sdk_response_and_deserialization_errors_are_sanitized() -> None:
     with pytest.raises(StripeClientError, match="response_invalid") as malformed:
         normalize_stripe_resource(object(), operation="product")
