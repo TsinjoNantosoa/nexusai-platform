@@ -74,7 +74,8 @@ def clean_database(db_engine: Engine, test_database_url: str) -> Iterator[None]:
     with db_engine.begin() as connection:
         connection.execute(
             text(
-                "TRUNCATE audit_logs, wallet_entries, wallets, sessions, products, users "
+                "TRUNCATE orders, stripe_customer_mappings, audit_logs, wallet_entries, "
+                "wallets, sessions, products, users "
                 "RESTART IDENTITY CASCADE"
             )
         )

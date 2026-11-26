@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"
     auth_rate_limit: int = 10
     auth_rate_window_seconds: int = 60
+    checkout_rate_limit: int = 6
+    checkout_rate_window_seconds: int = 60
     stripe_enabled: bool = False
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
@@ -68,6 +70,8 @@ class Settings(BaseSettings):
             raise ValueError("cookie_samesite must be lax, strict, or none")
         if self.auth_rate_limit <= 0 or self.auth_rate_window_seconds <= 0:
             raise ValueError("Authentication rate-limit settings must be positive")
+        if self.checkout_rate_limit <= 0 or self.checkout_rate_window_seconds <= 0:
+            raise ValueError("Checkout rate-limit settings must be positive")
         if self.stripe_request_timeout_seconds <= 0:
             raise ValueError("stripe_request_timeout_seconds must be positive")
         if not 0 <= self.stripe_max_network_retries <= 3:

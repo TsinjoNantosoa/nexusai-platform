@@ -69,6 +69,24 @@ class StripeGateway(Protocol):
         self, params: Mapping[str, Any], idempotency_key: str
     ) -> Mapping[str, Any]: ...
 
+    def retrieve_product(self, product_id: str) -> Mapping[str, Any]: ...
+
+    def retrieve_price(self, price_id: str) -> Mapping[str, Any]: ...
+
+    def create_customer(
+        self, params: Mapping[str, Any], idempotency_key: str
+    ) -> Mapping[str, Any]: ...
+
+    def retrieve_customer(self, customer_id: str) -> Mapping[str, Any]: ...
+
+    def create_checkout_session(
+        self, params: Mapping[str, Any], idempotency_key: str
+    ) -> Mapping[str, Any]: ...
+
+    def retrieve_checkout_session(self, session_id: str) -> Mapping[str, Any]: ...
+
+    def list_checkout_session_line_items(self, session_id: str) -> Iterator[Mapping[str, Any]]: ...
+
 
 class StripeClient:
     def __init__(self, settings: Settings) -> None:
@@ -103,9 +121,7 @@ class StripeClient:
             deserialize=self._client.deserialize,
         )
 
-    def create_product(
-        self, params: Mapping[str, Any], idempotency_key: str
-    ) -> Mapping[str, Any]:
+    def create_product(self, params: Mapping[str, Any], idempotency_key: str) -> Mapping[str, Any]:
         return self._normalized_request(
             "product creation",
             lambda: self._client.v1.products.create(
@@ -125,15 +141,73 @@ class StripeClient:
             deserialize=self._client.deserialize,
         )
 
-    def create_price(
-        self, params: Mapping[str, Any], idempotency_key: str
-    ) -> Mapping[str, Any]:
+    def create_price(self, params: Mapping[str, Any], idempotency_key: str) -> Mapping[str, Any]:
         return self._normalized_request(
             "price creation",
             lambda: self._client.v1.prices.create(
                 dict(params), {"idempotency_key": idempotency_key}
             ),
             expected_object="price",
+        )
+
+    def retrieve_product(self, product_id: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "product retrieval",
+            lambda: self._client.v1.products.retrieve(product_id),
+            expected_object="product",
+        )
+
+    def retrieve_price(self, price_id: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "price retrieval",
+            lambda: self._client.v1.prices.retrieve(price_id),
+            expected_object="price",
+        )
+
+    def create_customer(self, params: Mapping[str, Any], idempotency_key: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "customer creation",
+            lambda: self._client.v1.customers.create(
+                dict(params), {"idempotency_key": idempotency_key}
+            ),
+            expected_object="customer",
+        )
+
+    def retrieve_customer(self, customer_id: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "customer retrieval",
+            lambda: self._client.v1.customers.retrieve(customer_id),
+            expected_object="customer",
+        )
+
+    def create_checkout_session(
+        self, params: Mapping[str, Any], idempotency_key: str
+    ) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "Checkout Session creation",
+            lambda: self._client.v1.checkout.sessions.create(
+                dict(params), {"idempotency_key": idempotency_key}
+            ),
+            expected_object="checkout.session",
+        )
+
+    def retrieve_checkout_session(self, session_id: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "Checkout Session retrieval",
+            lambda: self._client.v1.checkout.sessions.retrieve(session_id),
+            expected_object="checkout.session",
+        )
+
+    def list_checkout_session_line_items(self, session_id: str) -> Iterator[Mapping[str, Any]]:
+        listing = self._request(
+            "Checkout Session line-item retrieval",
+            lambda: self._client.v1.checkout.sessions.line_items.list(session_id, {"limit": 100}),
+        )
+        return self._iterate(
+            "Checkout Session line-item retrieval",
+            listing,
+            expected_object="line_item",
+            deserialize=self._client.deserialize,
         )
 
     @staticmethod
