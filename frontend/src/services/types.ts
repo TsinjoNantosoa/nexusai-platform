@@ -37,9 +37,11 @@ export interface Order {
   id: string;
   sku: Sku;
   status: "pending" | "paid" | "failed" | "canceled" | "expired";
+  paymentStatus?: "unpaid" | "paid" | "failed" | "no_payment_required" | string;
+  fulfillmentStatus?: "pending" | "fulfilled" | string;
   gems: number;
   priceCents: number;
-  checkoutUrl: string;
+  checkoutUrl?: string;
   createdAt: string;
 }
 export interface Message {
