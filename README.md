@@ -13,14 +13,17 @@ NexusAI is a French/English AI-character chat demonstration. The repository cont
 Requirements: Python 3.12, Docker Compose, Bun, and an available Docker daemon.
 
 ```powershell
-docker compose up -d --build
+docker compose --project-name nexusai-phase3-stripe up -d --build
 cd frontend
 bun install --frozen-lockfile
 $env:VITE_DATA_MODE = "api"
+$env:API_PROXY_TARGET = "http://127.0.0.1:8100"
 bun run dev
 ```
 
-The frontend runs at `http://localhost:5173`; the backend runs at `http://localhost:8000`. Compose uses PostgreSQL on `127.0.0.1:55432` and a project-specific volume/network. It does not touch another PostgreSQL service.
+The frontend runs at `http://localhost:5173`; the backend runs at `http://localhost:8100`. Compose uses PostgreSQL on `127.0.0.1:56432` and a Phase 3-specific volume/network. It does not touch another PostgreSQL service.
+
+For the Stripe preparation worktree, use the project-specific ports `8100`, `56432`, and `56433`; see `docs/operations/STRIPE_SANDBOX_SETUP.md`. Never start this worktree against the Phase 2 volumes.
 
 The backend container runs `alembic upgrade head` and the idempotent product seed at startup. The explicit procedure is:
 
