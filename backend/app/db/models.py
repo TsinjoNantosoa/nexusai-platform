@@ -271,11 +271,42 @@ class Order(Base):
             name="ck_orders_status",
         ),
         CheckConstraint(
-            "fulfillment_status IN ('pending', 'fulfilled')",
+            "fulfillment_status IN ('pending', 'processing', 'fulfilled', 'review', 'failed')",
             name="ck_orders_fulfillment_status",
         ),
         Index("ix_orders_user_created", "user_id", "created_at"),
         Index("ix_orders_user_status", "user_id", "status"),
+    )
+
+
+class WebhookEvent(Base):
+    __tablename__ = "stripe_webhook_events"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    stripe_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    stripe_event_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    related_resource_id: Mapped[str | None] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="received")
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+    processing_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(80))
+
+    __table_args__ = (
+        UniqueConstraint(
+            "stripe_account_id", "stripe_event_id", name="uq_stripe_webhook_account_event"
+        ),
+        CheckConstraint(
+            "status IN ('received', 'processing', 'retry', 'completed', 'failed', 'review')",
+            name="ck_stripe_webhook_event_status",
+        ),
+        CheckConstraint("retry_count >= 0", name="ck_stripe_webhook_event_retry_count"),
+        Index("ix_stripe_webhook_event_queue", "status", "next_attempt_at", "received_at"),
     )
 
 

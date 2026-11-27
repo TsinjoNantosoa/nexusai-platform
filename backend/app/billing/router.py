@@ -13,8 +13,10 @@ from app.db.session import get_db
 
 from .checkout import CheckoutService
 from .schemas import CheckoutIn, CheckoutOut, OrderOut, ProductOut
+from .webhooks import router as webhook_router
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+router.include_router(webhook_router)
 _checkout_limiters: dict[tuple[int, int], SlidingWindowLimiter] = {}
 
 

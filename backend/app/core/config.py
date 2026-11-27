@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     stripe_enabled: bool = False
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
+    stripe_account_id: str | None = None
+    stripe_webhook_tolerance_seconds: int = 300
+    stripe_webhook_max_body_bytes: int = 512 * 1024
+    stripe_webhook_max_retries: int = 5
+    stripe_webhook_processing_timeout_seconds: int = 300
     stripe_api_version: str = "2026-11-18.endive"
     stripe_request_timeout_seconds: int = 30
     stripe_max_network_retries: int = 2
@@ -52,6 +57,11 @@ class Settings(BaseSettings):
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}(?:\.[a-z0-9]+)?", value):
             raise ValueError("stripe_api_version must be a Stripe date-based API version")
         return value
+
+    @field_validator("stripe_account_id", mode="before")
+    @classmethod
+    def empty_account_is_unset(cls, value: object) -> object:
+        return None if value == "" else value
 
     @field_validator("frontend_base_url")
     @classmethod
@@ -76,6 +86,18 @@ class Settings(BaseSettings):
             raise ValueError("stripe_request_timeout_seconds must be positive")
         if not 0 <= self.stripe_max_network_retries <= 3:
             raise ValueError("stripe_max_network_retries must be between 0 and 3")
+        if self.stripe_webhook_tolerance_seconds <= 0:
+            raise ValueError("stripe_webhook_tolerance_seconds must be positive")
+        if self.stripe_webhook_max_body_bytes <= 0:
+            raise ValueError("stripe_webhook_max_body_bytes must be positive")
+        if not 1 <= self.stripe_webhook_max_retries <= 20:
+            raise ValueError("stripe_webhook_max_retries must be between 1 and 20")
+        if self.stripe_webhook_processing_timeout_seconds <= 0:
+            raise ValueError("stripe_webhook_processing_timeout_seconds must be positive")
+        if self.stripe_account_id is not None and not re.fullmatch(
+            r"acct_[A-Za-z0-9_]+", self.stripe_account_id
+        ):
+            raise ValueError("stripe_account_id must be a Stripe account identifier")
         if self.stripe_secret_key is not None:
             key = self.stripe_secret_key.get_secret_value()
             allowed_prefixes = ("sk_test_", "rk_test_", "rkcs_test_", "csk_rk_test_")

@@ -646,6 +646,8 @@ def _validate_checkout_session(
     except ValueError:
         parsed = None
         parsed_port = None
+    if not require_url and url is None:
+        return ""
     if (
         parsed is None
         or parsed.scheme != "https"

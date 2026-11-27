@@ -87,6 +87,8 @@ class StripeGateway(Protocol):
 
     def list_checkout_session_line_items(self, session_id: str) -> Iterator[Mapping[str, Any]]: ...
 
+    def retrieve_payment_intent(self, payment_intent_id: str) -> Mapping[str, Any]: ...
+
 
 class StripeClient:
     def __init__(self, settings: Settings) -> None:
@@ -208,6 +210,13 @@ class StripeClient:
             listing,
             expected_object="item",
             deserialize=self._client.deserialize,
+        )
+
+    def retrieve_payment_intent(self, payment_intent_id: str) -> Mapping[str, Any]:
+        return self._normalized_request(
+            "PaymentIntent retrieval",
+            lambda: self._client.v1.payment_intents.retrieve(payment_intent_id),
+            expected_object="payment_intent",
         )
 
     @staticmethod

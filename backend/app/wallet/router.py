@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, Query, Response
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, exists, func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import current_user
 from app.core.errors import ApiProblem
-from app.db.models import User, Wallet, WalletEntry
+from app.db.models import Order, User, Wallet, WalletEntry
 from app.db.session import get_db
 
 from .schemas import EntryOut, WalletOut
@@ -17,7 +17,10 @@ def wallet(user: User = Depends(current_user), db: Session = Depends(get_db)) ->
     record = db.execute(select(Wallet).where(Wallet.user_id == user.id)).scalar_one_or_none()
     if record is None:
         raise ApiProblem("wallet_not_found", 404, "Wallet not found.")
-    return {"balance": record.balance, "inReview": False}
+    in_review = db.execute(
+        select(exists().where(Order.user_id == user.id, Order.fulfillment_status == "review"))
+    ).scalar_one()
+    return {"balance": record.balance, "inReview": bool(in_review)}
 
 
 @router.get("/transactions", response_model=list[EntryOut])
