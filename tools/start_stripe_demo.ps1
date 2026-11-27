@@ -48,10 +48,15 @@ $webhookSecret = (Get-EnvironmentValue "NEXUSAI_STRIPE_WEBHOOK_SECRET").Trim()
 if (-not $webhookSecret -or $webhookSecret -notmatch "^whsec_") {
     throw "A private Stripe Sandbox webhook secret must be injected before starting the demo."
 }
+$accountId = (Get-EnvironmentValue "NEXUSAI_STRIPE_ACCOUNT_ID").Trim()
+if (-not $accountId -or $accountId -notmatch "^acct_[A-Za-z0-9_]+$") {
+    throw "The active Stripe Sandbox account identifier must be injected before starting the demo."
+}
 
 $env:NEXUSAI_STRIPE_DEMO_ENABLED = "true"
 $env:NEXUSAI_STRIPE_DEMO_SECRET_KEY = $secretKey
 $env:NEXUSAI_STRIPE_DEMO_WEBHOOK_SECRET = $webhookSecret
+$env:NEXUSAI_STRIPE_DEMO_ACCOUNT_ID = $accountId
 
 Write-Output "Starting the owner-approved local Stripe Sandbox demonstration."
 docker compose --project-name $project up -d postgres backend
@@ -87,6 +92,7 @@ $env:NEXUSAI_STRIPE_WEBHOOK_SECRET = $null
 $env:NEXUSAI_STRIPE_DEMO_ENABLED = $null
 $env:NEXUSAI_STRIPE_DEMO_SECRET_KEY = $null
 $env:NEXUSAI_STRIPE_DEMO_WEBHOOK_SECRET = $null
+$env:NEXUSAI_STRIPE_DEMO_ACCOUNT_ID = $null
 $env:VITE_DATA_MODE = "api"
 $env:VITE_API_BASE_URL = "/api/v1"
 $env:API_PROXY_TARGET = "http://127.0.0.1:8100"

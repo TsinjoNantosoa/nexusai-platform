@@ -1,6 +1,6 @@
 # Database schema
 
-Migration `0001_initial` creates `users`, `sessions`, `wallets`, `wallet_entries`, `products`, and `audit_logs`. Migration `0002_stripe_catalogue_mappings` adds account-scoped, versioned Stripe product/price mappings. Migration `0003_checkout_orders` adds durable Stripe customer mappings and hosted Checkout orders.
+Migration `0001_initial` creates `users`, `sessions`, `wallets`, `wallet_entries`, `products`, and `audit_logs`. Migration `0002_stripe_catalogue_mappings` adds account-scoped, versioned Stripe product/price mappings. Migration `0003_checkout_orders` adds durable Stripe customer mappings and hosted Checkout orders. Migration `0004_stripe_webhook_inbox` adds the durable Stripe event inbox and review-capable fulfillment states.
 
 - UUID primary keys and UTC-aware timestamps are used throughout.
 - User email is normalized to lowercase and unique.
@@ -10,10 +10,13 @@ Migration `0001_initial` creates `users`, `sessions`, `wallets`, `wallet_entries
 - The free product remains local-only; paid Stripe mappings are unique by account, resource, and catalogue version.
 - Stripe customer mappings are unique per user and Sandbox account; ambiguous customer creation is retained as `unknown` and never recreated automatically.
 - Orders preserve immutable SKU, amount, currency, gem, account, product, price, customer, and idempotency snapshots. `status`/`payment_status` are separate from `fulfillment_status`.
+- Webhook events store only account-scoped identity, event type/resource ID, lifecycle timestamps, bounded retry state, and sanitized error codes; raw Stripe payloads are not persisted.
+- Webhook event uniqueness is scoped to the Stripe account. Queue claims use PostgreSQL row locks and abandoned processing claims are recoverable.
+- Fulfillment states are `pending`, `processing`, `fulfilled`, `review`, and `failed`; review states never credit the wallet.
 - Checkout sessions and payment intents are unique within their Stripe account. Order creation commits before Stripe mutations; an uncertain external result is retained for recovery.
 - Foreign keys use explicit delete behavior; indexes cover sessions, wallet history, and audit chronology.
 
-Subscription, refund, webhook-event, conversation, and AI request tables are not created until their approved contracts are implemented. Phase 3.2 never mutates wallets or ledger entries.
+Subscription, refund, conversation, and AI request tables are not created until their approved contracts are implemented. Phase 3.3 mutates wallets only through verified, idempotent one-time Starter/Plus fulfillment.
 
 ## Environment topology
 

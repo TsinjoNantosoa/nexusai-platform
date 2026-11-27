@@ -6,7 +6,7 @@ NexusAI is a French/English AI-character chat demonstration. The repository cont
 
 - Phase 1.1 frontend stabilization is merged in the local `origin/main` baseline.
 - Phase 2 implements registration, login, logout, current-user sessions, CSRF bootstrap, roles, wallet ledger primitives, products, migrations, health checks, and local Docker infrastructure.
-- Stripe catalogue preparation and Sandbox-only hosted Checkout are implemented through Phase 3.2. Webhooks, wallet fulfillment, Customer Portal, subscriptions, refunds, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
+- Stripe catalogue preparation, Sandbox-only hosted Checkout, signed webhooks and one-time Starter/Plus wallet fulfillment are implemented through Phase 3.3. Customer Portal, subscriptions, invoice renewals, refunds, AI provider calls, conversations, moderation workflows, and production deployment remain later phases.
 
 ## Local startup
 
@@ -43,6 +43,18 @@ docker compose --project-name nexusai-phase3-stripe exec backend python -m app.b
 ```
 
 The owner must inspect the Sandbox after `--apply`; Codex does not execute that command with owner credentials. The final repeat demonstrates idempotent reuse. See `docs/architecture/STRIPE_CATALOGUE.md` and `docs/operations/STRIPE_SANDBOX_SETUP.md`.
+
+Webhook intake is available at `POST /api/v1/billing/webhooks/stripe`. It only
+queues signed Sandbox events; a separate worker performs verified fulfillment:
+
+```powershell
+docker compose --project-name nexusai-phase3-stripe --profile stripe-demo up -d stripe-worker
+docker compose --project-name nexusai-phase3-stripe exec backend python -m app.billing.worker --once
+```
+
+The standard Compose profile remains Stripe-disabled. Review
+`docs/architecture/STRIPE_WEBHOOKS.md` and
+`docs/operations/STRIPE_WEBHOOK_TESTING.md` before forwarding events.
 
 Integration tests use a separate disposable PostgreSQL service. They fail closed when the explicit test configuration is missing and never fall back to the development database:
 

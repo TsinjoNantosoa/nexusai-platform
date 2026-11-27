@@ -59,6 +59,17 @@ The authoritative requirements remain in `frontend/docs/CAHIER_DES_CHARGES.md`, 
 
 Total: **29/29 PASS** for the local Phase 2.1 acceptance scope. Limitations above remain explicit and do not constitute production-readiness claims.
 
+## Phase 3.3 addendum
+
+| Requirement | Status | Evidence | Boundary |
+| --- | --- | --- | --- |
+| Signed Stripe webhook intake | IMPLEMENTED | Raw-body signature verification, timestamp tolerance, body limit, live/account rejection, durable inbox | Owner CLI forwarding remains manual |
+| One-time wallet fulfillment | IMPLEMENTED | Server-side Checkout/Price/PaymentIntent verification, atomic ledger transaction and Starter/Plus tests | Premium subscriptions and refunds remain deferred |
+| Financial idempotency | IMPLEMENTED | Account-scoped event uniqueness and PaymentIntent-derived wallet reference | Real Stripe delivery remains owner validation |
+| Historical reconciliation | IMPLEMENTED / CONTROLLED | Read-only candidate listing and targeted approval-gated apply CLI | Codex did not apply a historical order |
+
+Phase 3.3 implementation is complete locally. It must not be treated as a real Stripe demonstration until the owner performs and accepts an authorized Sandbox webhook delivery.
+
 ## Phase 2.2 database safety matrix
 
 | ID | Control / evidence | Result | Boundary |

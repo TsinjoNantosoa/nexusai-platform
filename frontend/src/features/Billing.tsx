@@ -305,7 +305,7 @@ function WalletContent() {
   const orders = useQuery({
     queryKey: ["orders"],
     queryFn: () => getApi().orders(),
-    enabled: isMock,
+    enabled: true,
   });
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -553,9 +553,9 @@ export function WalletPage() {
 function BillingSuccessContent({ orderId }: { orderId: string }) {
   const { t } = useTranslation();
   const [order, setOrder] = useState<Order | null>(null);
-  const [phase, setPhase] = useState<"verifying" | "pending" | "confirmed" | "failed" | "notFound">(
-    "verifying",
-  );
+  const [phase, setPhase] = useState<
+    "verifying" | "pending" | "fulfillmentPending" | "confirmed" | "review" | "failed" | "notFound"
+  >("verifying");
   const [error, setError] = useState<unknown>(null);
   const [retry, setRetry] = useState(0);
   const refresh = useRefresh();
@@ -576,8 +576,13 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
         const o = await getApi().order(orderId);
         if (canceled) return;
         setOrder(o);
-        if (o.status === "paid") {
+        if (o.status === "paid" && o.fulfillmentStatus === "fulfilled") {
           setPhase("confirmed");
+          await refreshRef.current();
+          return;
+        }
+        if (o.status === "paid" && o.fulfillmentStatus === "review") {
+          setPhase("review");
           await refreshRef.current();
           return;
         }
@@ -585,7 +590,7 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
           setPhase("failed");
           return;
         }
-        setPhase("pending");
+        setPhase(o.status === "paid" ? "fulfillmentPending" : "pending");
         polls++;
         if (polls < 12) timer = setTimeout(() => void tick(), 2500);
       } catch (e) {
@@ -606,13 +611,17 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
       ? CheckCircle2
       : phase === "failed" || phase === "notFound"
         ? XCircle
-        : phase === "verifying"
-          ? LoaderCircle
-          : Clock3;
+        : phase === "review"
+          ? Clock3
+          : phase === "verifying"
+            ? LoaderCircle
+            : Clock3;
   return (
     <section
       className="billing-result"
-      data-operation-active={phase === "verifying" || phase === "pending"}
+      data-operation-active={
+        phase === "verifying" || phase === "pending" || phase === "fulfillmentPending"
+      }
     >
       <Icon
         className={
@@ -630,9 +639,13 @@ function BillingSuccessContent({ orderId }: { orderId: string }) {
             ? isMock
               ? "billing.confirmedDesc"
               : "billing.apiConfirmed"
-            : phase === "failed"
-              ? "billing.failedDesc"
-              : "billing.pendingDesc",
+            : phase === "fulfillmentPending"
+              ? "billing.fulfillmentPendingDesc"
+              : phase === "review"
+                ? "billing.reviewDesc"
+                : phase === "failed"
+                  ? "billing.failedDesc"
+                  : "billing.pendingDesc",
         )}
       </p>
       {phase === "confirmed" && order && isMock && (

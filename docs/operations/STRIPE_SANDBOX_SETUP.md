@@ -1,6 +1,6 @@
 # Stripe Sandbox setup
 
-This procedure is for the temporary Stripe Sandbox only. Phase 3.1 provides the product/price catalogue and Phase 3.2 adds hosted one-time Checkout for Starter/Plus. It does not fulfill orders, process webhooks, create subscriptions, or process refunds.
+This procedure is for the temporary Stripe Sandbox only. Phase 3.1 provides the product/price catalogue, Phase 3.2 adds hosted one-time Checkout for Starter/Plus, and Phase 3.3 adds signed webhook intake plus verified one-time fulfillment. It does not create subscriptions, renew invoices, or process refunds.
 
 ## Safety rules
 
@@ -37,7 +37,7 @@ export NEXUSAI_FRONTEND_BASE_URL=http://127.0.0.1:5173
 export API_PROXY_TARGET=http://127.0.0.1:8100
 ```
 
-The standard Compose file ignores `NEXUSAI_STRIPE_ENABLED` and owner credential variables. Stripe remains disabled unless the guarded `tools/start_stripe_demo.ps1 -OwnerApproved` launcher supplies private `NEXUSAI_STRIPE_DEMO_*` variables. The application fails closed if enabled without both configured secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values.
+The standard Compose file ignores `NEXUSAI_STRIPE_ENABLED` and owner credential variables. Stripe remains disabled unless the guarded `tools/start_stripe_demo.ps1 -OwnerApproved` launcher supplies private `NEXUSAI_STRIPE_DEMO_*` variables, including the non-secret account ID. The application fails closed if enabled without both configured secrets. Do not run `docker compose config` after entering secrets because rendered configuration can display environment values.
 
 When finished:
 
