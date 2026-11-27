@@ -59,7 +59,7 @@ $env:NEXUSAI_STRIPE_DEMO_WEBHOOK_SECRET = $webhookSecret
 $env:NEXUSAI_STRIPE_DEMO_ACCOUNT_ID = $accountId
 
 Write-Output "Starting the owner-approved local Stripe Sandbox demonstration."
-docker compose --project-name $project up -d postgres backend
+docker compose --project-name $project --profile stripe-demo up -d postgres backend stripe-worker
 if ($LASTEXITCODE -ne 0) {
     throw "Docker Compose could not start the isolated local backend services."
 }
